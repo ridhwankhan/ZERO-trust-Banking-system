@@ -2,6 +2,29 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
+import sys
+import os
+
+# Add crypto module to path if needed
+crypto_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'crypto')
+if crypto_path not in sys.path:
+    sys.path.insert(0, crypto_path)
+
+from rsa import (
+    generate_keypair,
+    encrypt,
+    encrypt_private_key as encrypt_rsa_private_key,
+    serialize_public_key,
+    decrypt_private_key as decrypt_rsa_private_key
+)
+
+from ecc import (
+    ecc_generate_keypair,
+    ecc_serialize_public_key,
+    ecc_encrypt_private_key,
+    ecc_decrypt_private_key,
+    ECCEncryption
+)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -28,12 +51,43 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        password = validated_data['password']
+        
+        # Generate RSA key pair
+        rsa_public_key, rsa_private_key = generate_keypair(bits=1024)
+        
+        # Encrypt email and username with RSA public key
+        email_encrypted = encrypt(validated_data['email'], rsa_public_key)
+        username_encrypted = encrypt(validated_data['username'], rsa_public_key)
+        
+        # Encrypt RSA private key with password-derived key
+        rsa_encrypted_private_key = encrypt_rsa_private_key(rsa_private_key, password)
+        
+        # Serialize RSA public key for storage
+        rsa_public_key_str = serialize_public_key(rsa_public_key)
+        
+        # Generate ECC key pair
+        ecc = ECCEncryption()
+        ecc_private_key, ecc_public_key = ecc.generate_keypair()
+        
+        # Encrypt ECC private key with password-derived key
+        ecc_encrypted_private_key = ecc_encrypt_private_key(ecc_private_key, password)
+        
+        # Serialize ECC public key for storage
+        ecc_public_key_str = ecc_serialize_public_key(ecc_public_key)
+        
         user = User.objects.create(
-            email=validated_data['email'],
-            username=validated_data['username'],
+            email=validated_data['email'],  # Keep plaintext for Django auth
+            username=validated_data['username'],  # Keep plaintext for Django auth
+            email_encrypted=email_encrypted,
+            username_encrypted=username_encrypted,
+            public_key=rsa_public_key_str,
+            encrypted_private_key=rsa_encrypted_private_key,
+            ecc_public_key=ecc_public_key_str,
+            ecc_encrypted_private_key=ecc_encrypted_private_key,
             role=User.ROLE_USER
         )
-        user.set_password(validated_data['password'])
+        user.set_password(password)
         user.save()
         return user
 
@@ -41,21 +95,74 @@ class RegisterSerializer(serializers.ModelSerializer):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
+        password = attrs.get('password')
+        
+        # Decrypt RSA private key using password
+        decrypted_rsa_private_key = None
+        if self.user.encrypted_private_key:
+            try:
+                decrypted_rsa_private_key = decrypt_rsa_private_key(
+                    self.user.encrypted_private_key, 
+                    password
+                )
+            except ValueError:
+                pass
+        
+        # Decrypt ECC private key using password
+        decrypted_ecc_private_key = None
+        if self.user.ecc_encrypted_private_key:
+            try:
+                decrypted_ecc_private_key = ecc_decrypt_private_key(
+                    self.user.ecc_encrypted_private_key,
+                    password
+                )
+            except ValueError:
+                pass
+        
         data['user'] = {
             'id': self.user.id,
             'email': self.user.email,
             'username': self.user.username,
             'role': self.user.role,
-            'is_admin': self.user.is_admin
+            'is_admin': self.user.is_admin,
+            'has_rsa_keys': bool(self.user.encrypted_private_key),
+            'has_ecc_keys': bool(self.user.ecc_encrypted_private_key)
         }
+        
+        # Store decrypted keys in session (only in memory, not in response)
+        if decrypted_rsa_private_key:
+            data['_rsa_private_key'] = {
+                'd': decrypted_rsa_private_key[0],
+                'n': decrypted_rsa_private_key[1]
+            }
+        
+        if decrypted_ecc_private_key:
+            data['_ecc_private_key'] = decrypted_ecc_private_key
+        
         return data
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    crypto_status = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'role', 'created_at', 'updated_at')
+        fields = ('id', 'email', 'username', 'role', 'created_at', 'updated_at', 'crypto_status')
         read_only_fields = ('id', 'email', 'role', 'created_at', 'updated_at')
+    
+    def get_crypto_status(self, obj):
+        return {
+            'rsa': {
+                'has_public_key': bool(obj.public_key),
+                'has_encrypted_private_key': bool(obj.encrypted_private_key),
+                'has_encrypted_email': bool(obj.email_encrypted),
+                'has_encrypted_username': bool(obj.username_encrypted)
+            },
+            'ecc': {
+                'has_public_key': bool(obj.ecc_public_key),
+                'has_encrypted_private_key': bool(obj.ecc_encrypted_private_key)
+            }
+        }
 
 
 class ChangePasswordSerializer(serializers.Serializer):

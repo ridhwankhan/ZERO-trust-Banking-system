@@ -11,6 +11,12 @@ class UserAdmin(BaseUserAdmin):
     ordering = ['-created_at']
     
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('Additional Info', {'fields': ('role', 'created_at', 'updated_at')}),
+        ('Role & Timestamps', {'fields': ('role', 'created_at', 'updated_at')}),
+        ('RSA Encryption', {'fields': ('public_key', 'encrypted_private_key', 'email_encrypted', 'username_encrypted')}),
+        ('ECC Encryption', {'fields': ('ecc_public_key', 'ecc_encrypted_private_key')}),
     )
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = [
+        'created_at', 'updated_at', 
+        'public_key', 'encrypted_private_key', 'email_encrypted', 'username_encrypted',
+        'ecc_public_key', 'ecc_encrypted_private_key'
+    ]
