@@ -1,0 +1,44 @@
+.home {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.home h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.home p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.stack-info {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.stack-info h2 {
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.stack-info ul {
+  list-style: none;
+  text-align: left;
+}
+
+.stack-info li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.stack-info li:last-child {
+  border-bottom: none;
+}
