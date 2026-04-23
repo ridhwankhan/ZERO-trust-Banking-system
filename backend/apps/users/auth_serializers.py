@@ -186,3 +186,80 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is not correct")
         return value
+
+    def update(self, instance, validated_data):
+        """
+        Update password and re-encrypt private keys with new password.
+        """
+        import sys
+        import os
+        
+        # Add crypto path
+        crypto_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'crypto'
+        )
+        if crypto_path not in sys.path:
+            sys.path.insert(0, crypto_path)
+        
+        from key_management import (
+            SecureKeyStorage,
+            KeyRecoveryManager,
+            InMemoryKeyCache
+        )
+        
+        old_password = validated_data['old_password']
+        new_password = validated_data['new_password']
+        
+        # Track key recovery status
+        key_recovery_results = {
+            'rsa_re_encrypted': False,
+            'ecc_re_encrypted': False,
+            'warnings': []
+        }
+        
+        # Re-encrypt RSA private key if exists
+        if instance.encrypted_private_key:
+            try:
+                new_rsa_encrypted = SecureKeyStorage.re_encrypt_private_key(
+                    instance.encrypted_private_key,
+                    old_password,
+                    new_password
+                )
+                instance.encrypted_private_key = new_rsa_encrypted
+                key_recovery_results['rsa_re_encrypted'] = True
+            except ValueError as e:
+                key_recovery_results['warnings'].append(
+                    f"RSA key re-encryption failed: {str(e)}"
+                )
+        
+        # Re-encrypt ECC private key if exists
+        if instance.ecc_encrypted_private_key:
+            try:
+                new_ecc_encrypted = SecureKeyStorage.re_encrypt_private_key(
+                    instance.ecc_encrypted_private_key,
+                    old_password,
+                    new_password
+                )
+                instance.ecc_encrypted_private_key = new_ecc_encrypted
+                key_recovery_results['ecc_re_encrypted'] = True
+            except ValueError as e:
+                key_recovery_results['warnings'].append(
+                    f"ECC key re-encryption failed: {str(e)}"
+                )
+        
+        # Update password
+        instance.set_password(new_password)
+        instance.save()
+        
+        # Clear in-memory keys (user needs to re-login to decrypt with new password)
+        InMemoryKeyCache.clear_keys(instance.id)
+        
+        # Store recovery results for response
+        self._key_recovery_results = key_recovery_results
+        
+        return instance
+
+    def get_key_recovery_results(self):
+        """Get the results of key re-encryption."""
+        return getattr(self, '_key_recovery_results', {})

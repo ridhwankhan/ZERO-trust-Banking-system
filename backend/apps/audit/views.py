@@ -1,7 +1,8 @@
 """
 Audit log views for admin access.
 """
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, filters
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from django.utils.dateparse import parse_datetime

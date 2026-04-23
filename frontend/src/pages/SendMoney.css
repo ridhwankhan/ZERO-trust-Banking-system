@@ -1,0 +1,392 @@
+.send-money-container {
+  min-height: 100vh;
+  background: #f7fafc;
+}
+
+.send-header {
+  background: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.send-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #edf2f7;
+  color: #667eea;
+}
+
+/* Progress Steps */
+.progress-steps {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 24px;
+  position: relative;
+}
+
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.step {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #718096;
+  z-index: 1;
+  position: relative;
+}
+
+.step.active {
+  color: white;
+}
+
+.step.completed {
+  color: white;
+}
+
+/* Main Content */
+.send-main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.send-form {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.form-step h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #718096;
+  margin-bottom: 24px;
+}
+
+/* Input Groups */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group.large {
+  margin-bottom: 28px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  outline: none;
+  background: white;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.amount-input {
+  position: relative;
+}
+
+.amount-input .currency {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.amount-input input {
+  padding-left: 40px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Privacy Options */
+.privacy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.privacy-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f7fafc;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.privacy-card:hover {
+  background: #edf2f7;
+  transform: translateY(-2px);
+}
+
+.privacy-card.selected {
+  background: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.privacy-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.privacy-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 4px;
+}
+
+.privacy-info p {
+  font-size: 13px;
+  color: #718096;
+}
+
+.selected-indicator {
+  margin-left: auto;
+}
+
+/* Summary Card */
+.summary-card {
+  background: #f7fafc;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.summary-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.summary-row span:first-child {
+  color: #718096;
+}
+
+.summary-row strong {
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.privacy-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.primary-btn,
+.secondary-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.secondary-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Success Card */
+.success-card {
+  background: white;
+  border-radius: 24px;
+  padding: 48px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.success-icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: 0 auto 24px;
+}
+
+.success-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.success-card p {
+  color: #718096;
+  margin-bottom: 24px;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .send-form {
+    padding: 24px;
+  }
+  
+  .form-step h2 {
+    font-size: 20px;
+  }
+  
+  .privacy-card {
+    padding: 16px;
+  }
+  
+  .privacy-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .privacy-info p {
+    display: none;
+  }
+}

@@ -11,43 +11,45 @@ from .auth_serializers import (
     ChangePasswordSerializer
 )
 
-# In-memory storage for decrypted private keys (keyed by user_id)
-# This stays only in memory and is cleared on server restart
-_decrypted_keys_store = {}
+# Import key management system
+import sys
+import os
+crypto_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crypto')
+if crypto_path not in sys.path:
+    sys.path.insert(0, crypto_path)
 
+from key_management import (
+    InMemoryKeyCache,
+    store_user_keys,
+    get_user_rsa_key,
+    get_user_ecc_key,
+    clear_user_keys
+)
 
+# Backwards compatibility wrappers
 def store_private_keys_in_session(user_id: int, rsa_private_key: dict = None, ecc_private_key: int = None):
-    """Store decrypted private keys in memory (session-like storage)."""
-    if user_id not in _decrypted_keys_store:
-        _decrypted_keys_store[user_id] = {}
-    
+    """Store decrypted private keys in memory (delegates to key_management)."""
+    rsa_tuple = None
     if rsa_private_key:
-        _decrypted_keys_store[user_id]['rsa'] = rsa_private_key
-    if ecc_private_key:
-        _decrypted_keys_store[user_id]['ecc'] = ecc_private_key
-
+        rsa_tuple = (rsa_private_key['d'], rsa_private_key['n'])
+    InMemoryKeyCache.store_keys(user_id, rsa_tuple, ecc_private_key)
 
 def get_rsa_private_key_from_session(user_id: int) -> dict:
     """Retrieve decrypted RSA private key from memory."""
-    user_keys = _decrypted_keys_store.get(user_id, {})
-    return user_keys.get('rsa')
-
+    key = InMemoryKeyCache.get_rsa_key(user_id)
+    if key:
+        return {'d': key[0], 'n': key[1]}
+    return None
 
 def get_ecc_private_key_from_session(user_id: int) -> int:
     """Retrieve decrypted ECC private key from memory."""
-    user_keys = _decrypted_keys_store.get(user_id, {})
-    return user_keys.get('ecc')
-
+    return InMemoryKeyCache.get_ecc_key(user_id)
 
 def clear_private_keys_from_session(user_id: int):
     """Clear decrypted private keys from memory (logout)."""
-    if user_id in _decrypted_keys_store:
-        del _decrypted_keys_store[user_id]
+    InMemoryKeyCache.clear_keys(user_id)
 
-
-# Backwards compatibility aliases
-store_private_key_in_session = store_private_keys_in_session
-get_private_key_from_session = get_rsa_private_key_from_session
+# Alias for backwards compatibility
 clear_private_key_from_session = clear_private_keys_from_session
 
 
@@ -114,7 +116,7 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Clear decrypted private keys from memory
+            # Clear decrypted private keys from memory (secure logout)
             clear_private_keys_from_session(request.user.id)
             
             refresh_token = request.data.get('refresh')
@@ -126,7 +128,10 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(
-                {'message': 'Successfully logged out'},
+                {
+                    'message': 'Successfully logged out',
+                    'security_note': 'All private keys cleared from memory'
+                },
                 status=status.HTTP_200_OK
             )
         except Exception as e:
@@ -154,10 +159,31 @@ class ChangePasswordView(APIView):
         )
         if serializer.is_valid():
             user = request.user
-            user.set_password(serializer.validated_data['new_password'])
-            user.save()
-            return Response(
-                {'message': 'Password changed successfully'},
-                status=status.HTTP_200_OK
-            )
+            
+            # Use serializer update to handle password change and key re-encryption
+            serializer.update(user, serializer.validated_data)
+            
+            # Get key re-encryption results
+            key_results = serializer.get_key_recovery_results()
+            
+            response_data = {
+                'message': 'Password changed successfully',
+                'key_management': {
+                    'rsa_re_encrypted': key_results.get('rsa_re_encrypted', False),
+                    'ecc_re_encrypted': key_results.get('ecc_re_encrypted', False)
+                }
+            }
+            
+            # Add warnings if any
+            warnings = key_results.get('warnings', [])
+            if warnings:
+                response_data['warnings'] = warnings
+                response_data['note'] = (
+                    'Some encryption keys could not be re-encrypted. '
+                    'Please login again to verify your keys are working. '
+                    'If issues persist, contact support.'
+                )
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
