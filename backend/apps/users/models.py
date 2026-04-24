@@ -12,6 +12,17 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_USER)
+    
+    # RSA Key storage
+    email_encrypted = models.TextField(null=True, blank=True, help_text="RSA encrypted email")
+    username_encrypted = models.TextField(null=True, blank=True, help_text="RSA encrypted username")
+    public_key = models.TextField(null=True, blank=True, help_text="RSA public key (e, n) in JSON")
+    encrypted_private_key = models.TextField(null=True, blank=True, help_text="Password-encrypted RSA private key")
+    
+    # ECC Key storage
+    ecc_public_key = models.TextField(null=True, blank=True, help_text="ECC public key (point) in JSON")
+    ecc_encrypted_private_key = models.TextField(null=True, blank=True, help_text="Password-encrypted ECC private key")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

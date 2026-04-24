@@ -19,4 +19,6 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view(), name='auth_logout'),
     path('auth/profile/', UserProfileView.as_view(), name='auth_profile'),
     path('auth/change-password/', ChangePasswordView.as_view(), name='auth_change_password'),
+    path('transactions/', include('apps.transactions.urls')),
+    path('audit/', include('apps.audit.urls')),
 ]
