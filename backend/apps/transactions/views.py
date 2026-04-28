@@ -140,7 +140,7 @@ class LedgerBalanceView(APIView):
             ledger = Ledger.objects.get(user=request.user)
             serializer = LedgerSerializer(ledger)
             return Response({
-                'balance': str(ledger.balance),
+                'balance': f"{ledger.balance:.2f}",
                 'last_updated': ledger.last_updated,
                 'data': serializer.data
             })

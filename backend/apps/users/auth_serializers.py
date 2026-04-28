@@ -5,8 +5,11 @@ from .models import User
 import sys
 import os
 
+# Import transactions models for KYC request
+from apps.transactions.models import KYCRequest
+
 # Add crypto module to path if needed
-crypto_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'crypto')
+crypto_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crypto')
 if crypto_path not in sys.path:
     sys.path.insert(0, crypto_path)
 
@@ -34,12 +37,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         validators=[validate_password]
     )
     password_confirm = serializers.CharField(write_only=True, required=True)
+    admin_code = serializers.CharField(write_only=True, required=False, help_text="Admin registration code for role-based access")
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'password_confirm', 'role')
+        fields = ('email', 'username', 'password', 'password_confirm', 'role', 'admin_code')
         extra_kwargs = {
-            'role': {'required': False, 'read_only': True}
+            'role': {'required': False, 'default': User.ROLE_USER}
         }
 
     def validate(self, attrs):
@@ -47,10 +51,26 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "password": "Password fields didn't match."
             })
+        
+        # Validate admin registration
+        requested_role = attrs.get('role', User.ROLE_USER)
+        admin_code = attrs.get('admin_code', '')
+        
+        if requested_role == User.ROLE_ADMIN:
+            if not admin_code:
+                raise serializers.ValidationError({
+                    "admin_code": "Admin registration code is required for admin role."
+                })
+            if admin_code != 'ADMIN_SECRET_2024':  # In production, use environment variable
+                raise serializers.ValidationError({
+                    "admin_code": "Invalid admin registration code."
+                })
+        
         return attrs
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        validated_data.pop('admin_code', None)  # Remove admin_code from user creation
         password = validated_data['password']
         
         # Generate RSA key pair
@@ -74,7 +94,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         ecc_encrypted_private_key = ecc_encrypt_private_key(ecc_private_key, password)
         
         # Serialize ECC public key for storage
-        ecc_public_key_str = ecc_serialize_public_key(ecc_public_key)
+        ecc_public_key_str = ecc.serialize_public_key(ecc_public_key)
         
         user = User.objects.create(
             email=validated_data['email'],  # Keep plaintext for Django auth
@@ -89,6 +109,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.set_password(password)
         user.save()
+        
+        # Auto-create KYC request for new user
+        KYCRequest.objects.create(
+            user=user,
+            status=KYCRequest.STATUS_PENDING
+        )
+        
         return user
 
 
@@ -196,7 +223,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         
         # Add crypto path
         crypto_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            os.path.dirname(os.path.dirname(__file__)),
             'crypto'
         )
         if crypto_path not in sys.path:

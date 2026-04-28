@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -48,9 +48,12 @@ export interface User {
 }
 
 export interface AuthResponse {
-  access: string
-  refresh: string
+  tokens: {
+    access: string
+    refresh: string
+  }
   user: User
+  message?: string
 }
 
 export interface Transaction {
@@ -63,6 +66,9 @@ export interface Transaction {
   decrypted_payload?: any
   metadata_visible?: any
   hmac_signature: string
+  hmac_valid?: boolean
+  transaction_hash?: string
+  previous_hash?: string
   created_at: string
 }
 

@@ -410,6 +410,72 @@
   border-radius: 50%;
 }
 
+/* Summary Section */
+.summary-section {
+  background: white;
+  margin: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0;
+}
+
+.summary-card {
+  padding: 24px;
+  text-align: center;
+  border-right: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.summary-card:last-child {
+  border-right: none;
+}
+
+.summary-card:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.summary-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.summary-card p {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a202c;
+  margin: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.summary-card:nth-child(2) p {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.summary-card:nth-child(3) p {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 @media (max-width: 640px) {
   .history-main {
     padding: 16px;
@@ -430,5 +496,22 @@
   
   .tx-amount {
     font-size: 16px;
+  }
+
+  .summary-section {
+    margin: 16px;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .summary-card:last-child {
+    border-bottom: none;
   }
 }

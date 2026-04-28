@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Shield, Lock, Mail, ArrowRight } from 'lucide-react'
-import { login } from '../services/api'
-import './Auth.css'
+import { api } from '../services/api'
+import '../pages/Auth.css'
 
-export default function Login() {
+export default function AdminLogin() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',
@@ -20,20 +20,19 @@ export default function Login() {
     setError('')
 
     try {
-      const response = await login(formData)
-      localStorage.setItem('access_token', response.tokens.access)
-      localStorage.setItem('refresh_token', response.tokens.refresh)
-      localStorage.setItem('user', JSON.stringify(response.user))
-      navigate('/dashboard')
+      const response = await api.post('/auth/admin-login/', formData)
+      localStorage.setItem('access_token', response.data.tokens.access)
+      localStorage.setItem('refresh_token', response.data.tokens.refresh)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+      localStorage.setItem('role', response.data.user.role)
+      navigate('/admin-dashboard')
     } catch (err: any) {
-      let errorMessage = 'Login failed. Please check your credentials.'
-      if (!err.response) {
-        errorMessage = 'Unable to reach backend server. Make sure the Django API is running at http://localhost:8000'
-      } else if (err.response.data) {
-        errorMessage = err.response.data.detail || err.response.data.message || err.response.data.error || errorMessage
-      }
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        'Admin login failed. Please check your credentials.'
       setError(errorMessage)
-      console.error('Login error:', err.response?.data || err)
+      console.error('Admin login error:', err.response?.data || err)
     } finally {
       setLoading(false)
     }
@@ -56,8 +55,8 @@ export default function Login() {
           <Shield size={48} className="text-primary" />
         </motion.div>
 
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to your secure account</p>
+        <h1 className="auth-title">Admin Login</h1>
+        <p className="auth-subtitle">Access the administration dashboard</p>
 
         {error && (
           <motion.div
@@ -74,7 +73,7 @@ export default function Login() {
             {/* <Mail size={20} className="input-icon" /> */}
             <input
               type="email"
-              placeholder="Email address"
+              placeholder="Admin email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
@@ -107,18 +106,34 @@ export default function Login() {
               />
             ) : (
               <>
-                Sign In <ArrowRight size={20} />
+                Admin Login <ArrowRight size={20} />
               </>
             )}
           </motion.button>
         </form>
 
         <p className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/register" className="auth-link">
-            Create one
-          </Link>
+          Looking for user login?{' '}
+          <a href="/login" className="auth-link">
+            Sign in here
+          </a>
         </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="auth-info"
+      >
+        {/* <h3>Admin Panel Features</h3>
+        <ul>
+          <li>User management and account control</li>
+          <li>Suspend/activate user accounts</li>
+          <li>Monitor encrypted transactions</li>
+          <li>View system statistics</li>
+          <li>Audit transaction integrity</li>
+        </ul> */}
       </motion.div>
     </div>
   )

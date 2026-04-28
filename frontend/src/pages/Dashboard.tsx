@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Wallet,
@@ -9,7 +9,8 @@ import {
   Send,
   LogOut,
   Shield,
-  User
+  User,
+  CreditCard,
 } from 'lucide-react'
 import { getBalance, getTransactionHistory, logout } from '../services/api'
 import './Dashboard.css'
@@ -25,23 +26,31 @@ interface Transaction {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [balance, setBalance] = useState<string>('0.00')
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
+  // Fetch on mount and when location changes (returning from deposit)
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [filter, location])
 
   const fetchDashboardData = async () => {
+    setLoading(true)
     try {
+      const params: any = {}
+      if (filter === 'sent') params.as_sender = true
+      if (filter === 'received') params.as_receiver = true
+      
       const [balanceRes, historyRes] = await Promise.all([
         getBalance(),
-        getTransactionHistory()
+        getTransactionHistory(params)
       ])
       setBalance(balanceRes.balance)
-      setTransactions(historyRes.transactions || [])
+      setTransactions(historyRes.results?.transactions || historyRes.transactions || [])
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
@@ -117,6 +126,15 @@ export default function Dashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/deposit')}
+              className="action-btn deposit"
+            >
+              <CreditCard size={18} />
+              Deposit
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/send')}
               className="action-btn primary"
             >
@@ -187,9 +205,25 @@ export default function Dashboard() {
         >
           <div className="section-header">
             <h2>Recent Transactions</h2>
-            <button onClick={() => navigate('/history')} className="view-all">
-              View All
-            </button>
+            <div className="filter-controls">
+              <div className="filter-tabs">
+                {(['all', 'sent', 'received'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`filter-tab ${filter === f ? 'active' : ''}`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => navigate('/history')} 
+                className="view-all-btn"
+              >
+                View All
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -206,7 +240,14 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="transaction-list">
-              {transactions.slice(0, 5).map((tx, index) => (
+              {transactions
+                .filter(tx => {
+                  if (filter === 'sent') return tx.sender_email === user.email
+                  if (filter === 'received') return tx.receiver_email === user.email
+                  return true
+                })
+                .slice(0, 5)
+                .map((tx, index) => (
                 <motion.div
                   key={tx.id}
                   initial={{ x: -20, opacity: 0 }}

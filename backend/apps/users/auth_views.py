@@ -108,7 +108,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if user_id and (rsa_private_key or ecc_private_key):
             store_private_keys_in_session(user_id, rsa_private_key, ecc_private_key)
         
-        return Response(data, status=status.HTTP_200_OK)
+        # Reformat response to match registration format
+        response_data = {
+            'tokens': {
+                'access': data.pop('access'),
+                'refresh': data.pop('refresh')
+            },
+            'user': data.get('user', {})
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -187,3 +195,116 @@ class ChangePasswordView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ==================== ADMIN/AUTHORITY AUTH ====================
+
+class AdminLoginView(APIView):
+    """Admin login endpoint."""
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Login as admin."""
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Check if admin
+            if not user.is_admin:
+                return Response(
+                    {'error': 'Admin access required'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Verify password
+            if not user.check_password(password):
+                return Response(
+                    {'error': 'Invalid credentials'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'role': user.role,
+                    'is_admin': user.is_admin,
+                },
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token)
+                },
+                'message': 'Admin login successful'
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class AuthorityLoginView(APIView):
+    """Central Authority login endpoint."""
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Login as authority."""
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Check if authority
+            if user.role != User.ROLE_AUTHORITY:
+                return Response(
+                    {'error': 'Authority access required'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Verify password
+            if not user.check_password(password):
+                return Response(
+                    {'error': 'Invalid credentials'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'role': user.role,
+                },
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token)
+                },
+                'message': 'Authority login successful'
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

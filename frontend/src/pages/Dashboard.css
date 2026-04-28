@@ -48,6 +48,55 @@
 .logout-btn {
   background: #fed7d7;
   color: #c53030;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-tab {
+  padding: 8px 16px;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.filter-tab.active {
+  background: #667eea;
+  color: white;
+}
+
+.view-all-btn {
+  padding: 8px 16px;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.view-all-btn:hover {
+  background: #667eea;
+  color: white;
+}
   border: none;
   width: 36px;
   height: 36px;
@@ -109,6 +158,17 @@
   cursor: pointer;
   border: none;
   transition: all 0.3s ease;
+}
+
+.action-btn.deposit {
+  background: #48bb78;
+  color: white;
+}
+
+.action-btn.deposit:hover {
+  background: #38a169;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
 }
 
 .action-btn.primary {

@@ -212,6 +212,10 @@ class TransactionListSerializer(serializers.ModelSerializer):
         if obj.receiver != user:
             return {'access': 'denied', 'reason': 'Only receiver can decrypt'}
         
+        # Check if encrypted_payload is None or empty
+        if not obj.encrypted_payload:
+            return {'access': 'none', 'reason': 'No encrypted payload available'}
+        
         # STANDARD level - no decryption needed
         if obj.privacy_level == Transaction.STANDARD:
             try:

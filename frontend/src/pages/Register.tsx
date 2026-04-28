@@ -30,13 +30,38 @@ export default function Register() {
 
     try {
       const response = await register(formData)
-      localStorage.setItem('access_token', response.access)
-      localStorage.setItem('refresh_token', response.refresh)
+      localStorage.setItem('access_token', response.tokens.access)
+      localStorage.setItem('refresh_token', response.tokens.refresh)
       localStorage.setItem('user', JSON.stringify(response.user))
       setSuccess(true)
       setTimeout(() => navigate('/dashboard'), 2000)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed')
+      let errorMessage = 'Registration failed. Please try again.'
+      
+      if (!err.response) {
+        errorMessage = 'Unable to reach backend server. Make sure the Django API is running at http://localhost:8000'
+      } else if (err.response.data) {
+        const data = err.response.data
+        
+        if (data.password && Array.isArray(data.password)) {
+          errorMessage = data.password.join(' ')
+        } else if (data.email && Array.isArray(data.email)) {
+          errorMessage = 'Email: ' + data.email.join(' ')
+        } else if (data.username && Array.isArray(data.username)) {
+          errorMessage = 'Username: ' + data.username.join(' ')
+        } else if (data.detail) {
+          errorMessage = data.detail
+        } else if (data.message) {
+          errorMessage = data.message
+        } else if (data.error) {
+          errorMessage = data.error
+        } else if (typeof data === 'string') {
+          errorMessage = data
+        }
+      }
+      
+      setError(errorMessage)
+      console.error('Registration error:', err.response?.data || err)
     } finally {
       setLoading(false)
     }
@@ -85,7 +110,7 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="input-group">
-            <Mail size={20} className="input-icon" />
+            {/* <Mail size={20} className="input-icon" /> */}
             <input
               type="email"
               placeholder="Email address"
@@ -96,7 +121,7 @@ export default function Register() {
           </div>
 
           <div className="input-group">
-            <User size={20} className="input-icon" />
+            {/* <User size={20} className="input-icon" /> */}
             <input
               type="text"
               placeholder="Username"
@@ -107,7 +132,7 @@ export default function Register() {
           </div>
 
           <div className="input-group">
-            <Lock size={20} className="input-icon" />
+            {/* <Lock size={20} className="input-icon" /> */}
             <input
               type="password"
               placeholder="Password"
@@ -116,9 +141,15 @@ export default function Register() {
               required
             />
           </div>
+          
+          <div className="password-tips">
+            <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+              Password must have: 8+ characters, mix of letters & numbers
+            </p>
+          </div>
 
           <div className="input-group">
-            <Lock size={20} className="input-icon" />
+            {/* <Lock size={20} className="input-icon" /> */}
             <input
               type="password"
               placeholder="Confirm Password"
