@@ -1,0 +1,382 @@
+.deposit-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+}
+
+.deposit-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.deposit-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.deposit-icon {
+  color: #667eea;
+  margin-bottom: 15px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.deposit-header h1 {
+  font-size: 28px;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.deposit-header p {
+  color: #718096;
+  font-size: 14px;
+}
+
+.deposit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.amount-input,
+.card-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+}
+
+.amount-input:focus-within,
+.card-input:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.currency {
+  font-weight: 600;
+  color: #667eea;
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.amount-input input,
+.card-input input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  outline: none;
+  color: #1a202c;
+}
+
+.amount-input input::placeholder,
+.card-input input::placeholder {
+  color: #cbd5e0;
+}
+
+.card-input svg {
+  color: #667eea;
+  margin-right: 10px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row .form-group input {
+  width: 100%;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.form-row .form-group input:focus {
+  border-color: #667eea;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.amount-display {
+  background: #f7fafc;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 0 0 24px 0;
+}
+
+.amount-display p {
+  color: #4a5568;
+  font-size: 16px;
+  margin: 0;
+}
+
+.amount-display strong {
+  color: #667eea;
+  font-size: 24px;
+  display: block;
+  margin-top: 8px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+.deposit-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.deposit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.deposit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.secondary-button {
+  background: #e2e8f0;
+  color: #2d3748;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #cbd5e0;
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.success-section {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.success-icon {
+  color: #48bb78;
+  margin: 20px 0;
+}
+
+.success-section h2 {
+  font-size: 24px;
+  color: #1a202c;
+  margin: 0;
+}
+
+.success-section > p {
+  color: #718096;
+  margin: 0;
+}
+
+.success-details {
+  width: 100%;
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row span {
+  color: #718096;
+}
+
+.detail-row strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.amount-green {
+  color: #48bb78 !important;
+  font-size: 16px;
+}
+
+.deposit-info {
+  max-width: 500px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.deposit-info h3 {
+  font-size: 18px;
+  color: #1a202c;
+  margin-bottom: 16px;
+}
+
+.test-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.test-card {
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.test-card.success {
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+}
+
+.test-card.decline {
+  background: #fef2f2;
+  border: 2px solid #fca5a5;
+}
+
+.test-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.test-card.success h4 {
+  color: #16a34a;
+}
+
+.test-card.decline h4 {
+  color: #dc2626;
+}
+
+.test-card p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.test-card.success p {
+  color: #22c55e;
+}
+
+.test-card.decline p {
+  color: #ef4444;
+}
+
+.info-text {
+  font-size: 13px;
+  color: #718096;
+  margin: 0;
+  text-align: center;
+  line-height: 1.6;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .deposit-container {
+    padding: 20px 16px;
+  }
+
+  .deposit-card {
+    padding: 24px;
+  }
+
+  .deposit-header h1 {
+    font-size: 24px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    grid-template-columns: 1fr;
+  }
+
+  .test-cards {
+    grid-template-columns: 1fr;
+  }
+}

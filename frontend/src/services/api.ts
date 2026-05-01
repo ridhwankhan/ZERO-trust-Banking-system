@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -38,8 +38,10 @@ export interface User {
   id: number
   email: string
   username: string
+  contact_info?: string
   role: 'user' | 'admin'
   is_admin: boolean
+  two_factor_enabled?: boolean
   created_at: string
   crypto_status?: {
     rsa: { has_public_key: boolean; has_encrypted_private_key: boolean }
@@ -48,9 +50,24 @@ export interface User {
 }
 
 export interface AuthResponse {
-  access: string
-  refresh: string
+  tokens?: {
+    access: string
+    refresh: string
+  }
   user: User
+  message?: string
+}
+
+export interface TwoFactorSetupResponse {
+  secret: string
+  provisioning_uri: string
+  backup_codes: string[]
+  instructions: {
+    step1: string
+    step2: string
+    step3: string
+    step4: string
+  }
 }
 
 export interface Transaction {
@@ -63,6 +80,9 @@ export interface Transaction {
   decrypted_payload?: any
   metadata_visible?: any
   hmac_signature: string
+  hmac_valid?: boolean
+  transaction_hash?: string
+  previous_hash?: string
   created_at: string
 }
 
@@ -80,10 +100,22 @@ export interface CreateTransactionData {
   category?: string
 }
 
+export interface Post {
+  id: number
+  author: number
+  author_email: string
+  title: string
+  content: string
+  is_author: boolean
+  created_at: string
+  updated_at: string
+}
+
 // Auth API
 export const register = async (data: {
   email: string
   username: string
+  contact_info: string
   password: string
   password_confirm: string
 }): Promise<AuthResponse> => {
@@ -99,6 +131,24 @@ export const login = async (data: {
   return response.data
 }
 
+export const setupTwoFactor = async (): Promise<TwoFactorSetupResponse> => {
+  const response = await api.get('/auth/2fa/setup/')
+  return response.data
+}
+
+export const enableTwoFactor = async (token: string): Promise<{ message: string }> => {
+  const response = await api.post('/auth/2fa/setup/', { token })
+  return response.data
+}
+
+export const verifyTwoFactorLogin = async (data: {
+  user_id: number
+  token: string
+}): Promise<AuthResponse> => {
+  const response = await api.post('/auth/2fa/verify/', data)
+  return response.data
+}
+
 export const logout = async (refresh: string): Promise<void> => {
   await api.post('/auth/logout/', { refresh })
 }
@@ -106,6 +156,40 @@ export const logout = async (refresh: string): Promise<void> => {
 export const getProfile = async (): Promise<User> => {
   const response = await api.get('/auth/profile/')
   return response.data
+}
+
+export const updateProfile = async (data: {
+  email?: string
+  username?: string
+  contact_info?: string
+}): Promise<User> => {
+  const response = await api.patch('/auth/profile/', data)
+  return response.data
+}
+
+export const getPosts = async (): Promise<Post[]> => {
+  const response = await api.get('/posts/')
+  return response.data
+}
+
+export const createPost = async (data: {
+  title: string
+  content: string
+}): Promise<Post> => {
+  const response = await api.post('/posts/', data)
+  return response.data
+}
+
+export const updatePost = async (
+  id: number,
+  data: { title: string; content: string }
+): Promise<Post> => {
+  const response = await api.put(`/posts/${id}/`, data)
+  return response.data
+}
+
+export const deletePost = async (id: number): Promise<void> => {
+  await api.delete(`/posts/${id}/`)
 }
 
 // Transaction API

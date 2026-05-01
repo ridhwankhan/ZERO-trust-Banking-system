@@ -57,16 +57,18 @@ export default function TransactionHistory() {
 
   const fetchTransactions = async () => {
     setLoading(true)
+    const params: any = {}
+    if (filter === 'sent') params.as_sender = true
+    if (filter === 'received') params.as_receiver = true
+    if (privacyFilter !== 'all') params.privacy_level = privacyFilter
+    
     try {
-      const params: any = {}
-      if (filter === 'sent') params.as_sender = true
-      if (filter === 'received') params.as_receiver = true
-      if (privacyFilter !== 'all') params.privacy_level = privacyFilter
-      
       const response = await getTransactionHistory(params)
-      setTransactions(response.transactions || [])
-    } catch (error) {
+      setTransactions(response.results?.transactions || response.transactions || [])
+    } catch (error: any) {
       console.error('Failed to fetch transactions:', error)
+      console.log('API Response:', error.response?.data)
+      console.log('Filter params:', params)
     } finally {
       setLoading(false)
     }
@@ -151,6 +153,28 @@ export default function TransactionHistory() {
             <option value="private_metadata">Private Metadata</option>
             <option value="high_privacy">High Privacy</option>
           </select>
+        </div>
+      </motion.div>
+
+      {/* Transaction Summary */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="summary-section"
+      >
+        <div className="summary-cards">
+          <div className="summary-card">
+            <h3>Total Transactions</h3>
+            <p>{transactions.length}</p>
+          </div>
+          <div className="summary-card">
+            <h3>Sent</h3>
+            <p>{transactions.filter(tx => isSent(tx)).length}</p>
+          </div>
+          <div className="summary-card">
+            <h3>Received</h3>
+            <p>{transactions.filter(tx => !isSent(tx)).length}</p>
+          </div>
         </div>
       </motion.div>
 
