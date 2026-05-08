@@ -19,11 +19,17 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me')
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Handle Railway's dynamic domain
+# Handle Railway's dynamic domain and Render's domain
 railway_domain = os.getenv('RAILWAY_STATIC_URL', '').replace('https://', '').replace('http://', '')
-allowed_hosts = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+render_domain = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').replace('https://', '').replace('http://', '')
+allowed_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 if railway_domain:
     allowed_hosts.append(railway_domain)
+if render_domain:
+    allowed_hosts.append(render_domain)
+# For Render, always add the onrender.com domain
+if os.getenv('RENDER'):
+    allowed_hosts.extend(['banking-backend-5ymw.onrender.com', '*.onrender.com'])
 ALLOWED_HOSTS = list(set(allowed_hosts))  # Remove duplicates
 
 DJANGO_APPS = [
@@ -142,13 +148,13 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'https://zero-trust-banking-system.vercel.app,http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000'
+    'https://zero-trust-banking-system.vercel.app,http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000,https://*.vercel.app'
 ).split(',')
 
 # CSRF trusted origins for production
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    'https://zero-trust-banking-system.vercel.app'
+    'https://zero-trust-banking-system.vercel.app,https://*.vercel.app'
 ).split(',')
 
 # JWT Settings
