@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -88,6 +90,46 @@ export default function TransactionHistory() {
 
   const isSent = (tx: Transaction) => tx.sender_email === user.email
 
+  const exportStatementToPDF = () => {
+    const doc = new jsPDF()
+    const generatedAt = new Date().toLocaleString()
+    const rows = filteredTransactions.map((tx) => [
+      tx.id,
+      isSent(tx) ? 'Sent' : 'Received',
+      tx.sender_email,
+      tx.receiver_email,
+      `$${parseFloat(tx.amount).toFixed(2)}`,
+      tx.privacy_level.replace('_', ' '),
+      new Date(tx.created_at).toLocaleString(),
+    ])
+
+    doc.setFillColor(15, 23, 42)
+    doc.rect(0, 0, 210, 34, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(18)
+    doc.text('ZeroTrust Bank - Encrypted Statement', 14, 16)
+    doc.setFontSize(10)
+    doc.text(`Generated for: ${user.email || 'Unknown User'}`, 14, 23)
+    doc.text(`Generated at: ${generatedAt}`, 14, 28)
+    doc.setTextColor(0, 0, 0)
+
+    autoTable(doc, {
+      startY: 42,
+      head: [['ID', 'Type', 'Sender', 'Receiver', 'Amount', 'Privacy', 'Date']],
+      body: rows,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      styles: { fontSize: 9, cellPadding: 2.5 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    })
+
+    doc.save(`zerotrust-statement-${new Date().toISOString().slice(0, 10)}.pdf`)
+  }
+
   const filteredTransactions = transactions.filter(tx => {
     if (privacyFilter !== 'all' && tx.privacy_level !== privacyFilter) return false
     return true
@@ -154,6 +196,14 @@ export default function TransactionHistory() {
             <option value="high_privacy">High Privacy</option>
           </select>
         </div>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
+          className="export-pdf-btn"
+          onClick={exportStatementToPDF}
+        >
+          Export Statement to PDF
+        </motion.button>
       </motion.div>
 
       {/* Transaction Summary */}

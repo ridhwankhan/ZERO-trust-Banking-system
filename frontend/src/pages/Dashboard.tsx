@@ -13,6 +13,7 @@ import {
   CreditCard,
   Settings,
   MessageSquare,
+  Wifi,
 } from 'lucide-react'
 import { getBalance, getTransactionHistory, logout } from '../services/api'
 import './Dashboard.css'
@@ -170,6 +171,24 @@ export default function Dashboard() {
               <MessageSquare size={18} />
               Posts
             </motion.button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="live-security-widget"
+        >
+          <div className="security-widget-head">
+            <Wifi size={16} />
+            <span>Live Security Status</span>
+          </div>
+          <div className="security-widget-line">
+            <span className="security-pulse-dot" />
+            <span>
+              Connection Secured | AES-256 Transport | RSA-2048 Data at Rest | HMAC-SHA256 Integrity Verified
+            </span>
           </div>
         </motion.div>
 

@@ -11,16 +11,35 @@ export default function CreatePost() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+
+  const getPostErrorMessage = (err: any) => {
+    const data = err?.response?.data
+    if (!data) return 'Failed to publish post'
+    if (typeof data.error === 'string') return data.error
+    if (Array.isArray(data.error) && data.error.length > 0) return String(data.error[0])
+    if (typeof data.detail === 'string') return data.detail
+    return 'Failed to publish post'
+  }
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanTitle = title.trim()
+    const cleanContent = content.trim()
+    if (!cleanTitle || !cleanContent) {
+      setError('Both title and content are required.')
+      return
+    }
+
     setLoading(true)
     setError('')
+    setSuccessMessage('')
     try {
-      await createPost({ title, content })
-      navigate('/posts')
+      await createPost({ title: cleanTitle, content: cleanContent })
+      setSuccessMessage('Post published successfully. Redirecting to feed...')
+      setTimeout(() => navigate('/posts'), 600)
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Failed to publish post')
+      setError(getPostErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -48,6 +67,7 @@ export default function CreatePost() {
           <p>Your title and content are RSA-encrypted before storage.</p>
 
           {error && <div className="create-post-error">{error}</div>}
+          {successMessage && <div className="create-post-success">{successMessage}</div>}
 
           <form onSubmit={handleCreatePost} className="create-post-form">
             <input

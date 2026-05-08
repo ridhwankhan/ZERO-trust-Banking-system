@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -52,22 +53,50 @@ const AuthorityRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <Router>
-      <Routes>
+      <AnimatedRoutes />
+    </Router>
+  )
+}
+
+const pageTransition = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -14 },
+}
+
+const Page = ({ children }: { children: React.ReactNode }) => (
+  <motion.div
+    variants={pageTransition}
+    initial="initial"
+    animate="animate"
+    exit="exit"
+    transition={{ duration: 0.3, ease: 'easeOut' }}
+  >
+    {children}
+  </motion.div>
+)
+
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         {/* Public Home Route */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Page><Home /></Page>} />
         
         {/* Public Authentication Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/authority-login" element={<AuthorityLogin />} />
+        <Route path="/login" element={<Page><Login /></Page>} />
+        <Route path="/register" element={<Page><Register /></Page>} />
+        <Route path="/admin-login" element={<Page><AdminLogin /></Page>} />
+        <Route path="/authority-login" element={<Page><AuthorityLogin /></Page>} />
         
         {/* User Protected Routes */}
         <Route 
           path="/dashboard" 
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Page><Dashboard /></Page>
             </ProtectedRoute>
           } 
         />
@@ -75,7 +104,7 @@ function App() {
           path="/send" 
           element={
             <ProtectedRoute>
-              <SendMoney />
+              <Page><SendMoney /></Page>
             </ProtectedRoute>
           } 
         />
@@ -83,7 +112,7 @@ function App() {
           path="/history" 
           element={
             <ProtectedRoute>
-              <TransactionHistory />
+              <Page><TransactionHistory /></Page>
             </ProtectedRoute>
           } 
         />
@@ -91,7 +120,7 @@ function App() {
           path="/deposit" 
           element={
             <ProtectedRoute>
-              <Deposit />
+              <Page><Deposit /></Page>
             </ProtectedRoute>
           } 
         />
@@ -99,7 +128,7 @@ function App() {
           path="/profile" 
           element={
             <ProtectedRoute>
-              <Profile />
+              <Page><Profile /></Page>
             </ProtectedRoute>
           } 
         />
@@ -107,7 +136,7 @@ function App() {
           path="/posts"
           element={
             <ProtectedRoute>
-              <Posts />
+              <Page><Posts /></Page>
             </ProtectedRoute>
           }
         />
@@ -115,7 +144,7 @@ function App() {
           path="/posts/new"
           element={
             <ProtectedRoute>
-              <CreatePost />
+              <Page><CreatePost /></Page>
             </ProtectedRoute>
           }
         />
@@ -123,7 +152,7 @@ function App() {
           path="/transfer" 
           element={
             <ProtectedRoute>
-              <Transfer />
+              <Page><Transfer /></Page>
             </ProtectedRoute>
           } 
         />
@@ -133,7 +162,7 @@ function App() {
           path="/admin-dashboard" 
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <Page><AdminDashboard /></Page>
             </AdminRoute>
           } 
         />
@@ -143,7 +172,7 @@ function App() {
           path="/authority-dashboard" 
           element={
             <AuthorityRoute>
-              <AuthorityDashboard />
+              <Page><AuthorityDashboard /></Page>
             </AuthorityRoute>
           } 
         />
@@ -151,7 +180,7 @@ function App() {
         {/* Redirect unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+    </AnimatePresence>
   )
 }
 

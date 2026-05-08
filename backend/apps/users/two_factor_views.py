@@ -16,7 +16,7 @@ from .serializers import (
     TwoFactorVerifySerializer,
     TwoFactorEnableSerializer
 )
-from crypto.totp import TOTP
+from totp import TOTP
 
 
 class TwoFactorSetupView(generics.GenericAPIView):
@@ -73,8 +73,8 @@ class TwoFactorSetupView(generics.GenericAPIView):
             )
         
         # Verify the token
-        from .totp import verify_totp_token
-        if verify_totp_token(user.two_factor_secret, token):
+        from totp import verify_totp_token
+        if verify_totp_token(user.two_factor_secret, token, window=2):
             user.two_factor_enabled = True
             user.save()
             
@@ -116,8 +116,8 @@ class TwoFactorVerifyView(APIView):
             )
         
         # Verify TOTP token
-        from .totp import verify_totp_token
-        if verify_totp_token(user.two_factor_secret, token):
+        from totp import verify_totp_token
+        if verify_totp_token(user.two_factor_secret, token, window=2):
             # Generate JWT tokens for authenticated user
             from rest_framework_simplejwt.tokens import RefreshToken
             refresh = RefreshToken.for_user(user)

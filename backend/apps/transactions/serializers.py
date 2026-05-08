@@ -291,8 +291,6 @@ class TransactionHistoryQuerySerializer(serializers.Serializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    title = serializers.SerializerMethodField()
-    content = serializers.SerializerMethodField()
     author_email = serializers.EmailField(source='author.email', read_only=True)
     is_author = serializers.SerializerMethodField()
 
@@ -304,8 +302,6 @@ class PostSerializer(serializers.ModelSerializer):
             'author_email',
             'title',
             'content',
-            'title_encrypted',
-            'content_encrypted',
             'is_author',
             'created_at',
             'updated_at',
@@ -314,35 +310,10 @@ class PostSerializer(serializers.ModelSerializer):
             'id',
             'author',
             'author_email',
-            'title_encrypted',
-            'content_encrypted',
             'is_author',
             'created_at',
             'updated_at',
         ]
-
-    def _decrypt_field(self, obj, encrypted_value):
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return None
-
-        try:
-            from apps.users.auth_views import get_rsa_private_key_from_session
-            private_key_obj = get_rsa_private_key_from_session(obj.author_id)
-            if not private_key_obj:
-                return None
-            private_key = (private_key_obj['d'], private_key_obj['n'])
-            return rsa_decrypt(encrypted_value, private_key)
-        except Exception:
-            return None
-
-    def get_title(self, obj):
-        decrypted = self._decrypt_field(obj, obj.title_encrypted)
-        return decrypted if decrypted is not None else "Encrypted title (author-only decryption)"
-
-    def get_content(self, obj):
-        decrypted = self._decrypt_field(obj, obj.content_encrypted)
-        return decrypted if decrypted is not None else "Encrypted content (author-only decryption)"
 
     def get_is_author(self, obj):
         request = self.context.get('request')

@@ -106,6 +106,8 @@ export interface Post {
   author_email: string
   title: string
   content: string
+  title_encrypted?: string
+  content_encrypted?: string
   is_author: boolean
   created_at: string
   updated_at: string
@@ -169,7 +171,10 @@ export const updateProfile = async (data: {
 
 export const getPosts = async (): Promise<Post[]> => {
   const response = await api.get('/posts/')
-  return response.data
+  const payload = response.data
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.results)) return payload.results
+  return []
 }
 
 export const createPost = async (data: {

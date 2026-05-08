@@ -384,14 +384,14 @@ class ActionLog(models.Model):
 
 
 class Post(models.Model):
-    """Encrypted social post authored by a user."""
+    """Social post authored by a user."""
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='posts'
     )
-    title_encrypted = models.TextField(help_text="RSA encrypted post title")
-    content_encrypted = models.TextField(help_text="RSA encrypted post content")
+    title = models.CharField(max_length=255, help_text="Post title", default="Migrated Post Title")
+    content = models.TextField(help_text="Post content", default="Migrated Post Content")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

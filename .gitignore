@@ -58,3 +58,13 @@ dist-ssr/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation / Markdown
+*.md
+!README.md
+!Readme.md
+!readme.md
+!NAVIGATE.md
+!Navigate.md
+!navigate.md
+

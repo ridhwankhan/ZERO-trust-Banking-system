@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Lock, LogIn, UserPlus, Shield, Users, TrendingUp } from 'lucide-react'
+import { Lock, LogIn, UserPlus, Shield, Database, Fingerprint, Sparkles } from 'lucide-react'
 import './Home.css'
 
 function Home() {
@@ -17,105 +17,74 @@ function Home() {
   
   return (
     <div className="home-container">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="home-content"
-      >
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-          className="home-logo"
-        >
-          <Lock size={64} className="logo-icon" />
-        </motion.div>
+      <div className="home-glow home-glow-one" />
+      <div className="home-glow home-glow-two" />
+      <div className="home-grid-overlay" />
 
-        <h1 className="home-title">ZERO Trust Banking System</h1>
-        <p className="home-subtitle">Your Money, Protected and Connected </p>
-        
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="home-content">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="home-stats"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55 }}
+          className="hero-section"
         >
-          <h2>Trusted by Thousands</h2>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <Users size={20} className="stat-icon" />
-              <div className="stat-number">10K+</div>
-              <div className="stat-label">Active Users</div>
-            </div>
-            <div className="stat-item">
-              <TrendingUp size={20} className="stat-icon" />
-              <div className="stat-number">$2.5M+</div>
-              <div className="stat-label">Transactions</div>
-            </div>
-            <div className="stat-item">
-              <Shield size={20} className="stat-icon" />
-              <div className="stat-number">100%</div>
-              <div className="stat-label">Secure</div>
-            </div>
+          <div className="hero-pill">
+            <Sparkles size={14} />
+            Zero-Trust Encrypted Banking
+          </div>
+
+          <h1 className="home-title">Banking security engineered like a modern cryptographic cloud startup.</h1>
+          <p className="home-subtitle">
+            Protect every account action with layered encryption, role-aware controls, and integrity verification built for
+            high-stakes financial systems.
+          </p>
+
+          <div className="home-buttons">
+            <button onClick={() => navigate('/login')} className="btn btn-primary">
+              <LogIn size={18} />
+              User Login
+            </button>
+            <button onClick={() => navigate('/register')} className="btn btn-secondary">
+              <UserPlus size={18} />
+              Create Account
+            </button>
           </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="home-buttons"
+          transition={{ delay: 0.2 }}
+          className="feature-grid"
         >
-          <button 
-            onClick={() => navigate('/login')}
-            className="btn btn-primary"
-          >
-            <LogIn size={20} />
-            User Login
-          </button>
-          <button 
-            onClick={() => navigate('/register')}
-            className="btn btn-secondary"
-          >
-            <UserPlus size={20} />
-            Register
-          </button>
+          <article className="feature-card">
+            <Lock size={18} />
+            <h3>Zero-Trust Sessions</h3>
+            <p>JWT sessions hardened with optional 2FA challenge and role-aware authorization paths.</p>
+          </article>
+          <article className="feature-card">
+            <Database size={18} />
+            <h3>Encrypted Data at Rest</h3>
+            <p>Profile and post fields are encrypted before persistence to simulate production-grade secure storage.</p>
+          </article>
+          <article className="feature-card">
+            <Shield size={18} />
+            <h3>Integrity Assurance</h3>
+            <p>HMAC-backed transaction verification and audit-ready cryptographic checks for trustable records.</p>
+          </article>
+          <article className="feature-card">
+            <Fingerprint size={18} />
+            <h3>Compliance Friendly</h3>
+            <p>Admin and Authority workspaces support KYC, monitoring, and visibility over security operations.</p>
+          </article>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="home-admin-section"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="home-admin-section">
           <p className="admin-label">Administrative Access</p>
           <div className="admin-buttons">
-            <button 
-              onClick={() => navigate('/admin-login')}
-              className="btn btn-admin"
-            >
-              Admin Login
-            </button>
-            <button 
-              onClick={() => navigate('/authority-login')}
-              className="btn btn-authority"
-            >
-              Authority Login
-            </button>
+            <button onClick={() => navigate('/admin-login')} className="btn btn-admin">Admin Login</button>
+            <button onClick={() => navigate('/authority-login')} className="btn btn-authority">Authority Login</button>
           </div>
-        </motion.div>
-  
-    
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0 }}
-          className="home-footer"
-        >
-          <p>Secure Banking Platform</p>
-          {/* <p className="tech-stack">Advanced Cryptography</p> */}
         </motion.div>
       </motion.div>
     </div>

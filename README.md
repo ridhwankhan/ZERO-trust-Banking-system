@@ -575,4 +575,79 @@ For support and questions:
 
 ---
 
+## 🧭 Comprehensive System Guide: Algorithms & Navigation
+
+To provide full clarity on how the project functions internally and externally, here is a detailed breakdown of **which algorithms are used where**, and **how to navigate the entire system and its features**.
+
+### 1. Which Algorithm is Where?
+
+The system uses a combination of modern cryptographic algorithms to ensure Zero-Trust principles. All cryptographic logic is contained within the `backend/crypto/` directory.
+
+*   **RSA-2048 (Asymmetric Encryption)**
+    *   **Where it is:** `backend/crypto/rsa.py`
+    *   **What it does:** Generates keypairs for users during registration. Used to encrypt sensitive User Profile data (Email, Username, Contact Info) and the transaction amounts in the payload before they are stored in the database.
+*   **ECC - Elliptic Curve Cryptography (Asymmetric & Key Exchange)**
+    *   **Where it is:** `backend/crypto/ecc.py`
+    *   **What it does:** Generates ECC keypairs for users. Used for high-privacy transactions (ECDH Key Exchange) to encrypt metadata that only the sender and receiver can decrypt.
+*   **HMAC-SHA256 (Message Authentication Code)**
+    *   **Where it is:** `backend/crypto/hmac_custom.py`
+    *   **What it does:** Ensures data integrity. Whenever a transaction (Deposit or Transfer) is created, an HMAC signature is generated using a server secret. This detects if anyone maliciously modifies the transaction amount directly in the database.
+*   **SHA-256 Hash Chains (Tamper-Proof Ledger)**
+    *   **Where it is:** `backend/apps/transactions/banking_views.py` (Transaction processing)
+    *   **What it does:** Every transaction generates a SHA256 hash that includes the `previous_hash` of the sender's last transaction. This creates an unbreakable chain, simulating a blockchain ledger.
+*   **TOTP (Time-Based One-Time Password for 2FA)**
+    *   **Where it is:** `backend/crypto/totp.py`
+    *   **What it does:** Generates the QR code provisioning URI and validates the 6-digit codes sent from the user's Google/Microsoft Authenticator app during login.
+
+### 2. How to Navigate the Project (Routes & Roles)
+
+The application has three distinct User Roles. Depending on the account you log into, the system navigates you to different Dashboards.
+
+*   **Regular User Role**
+    *   **Login URL:** `http://localhost:5174/login`
+    *   **Main Navigation:** Navigates to `/dashboard`.
+    *   **Permissions:** Can deposit funds, send money, view own transaction history, manage profile, and use 2FA.
+*   **Admin Role**
+    *   **Login URL:** `http://localhost:5174/login` (with Admin credentials: `admin@example.com` / `Admin@12345`)
+    *   **Main Navigation:** Automatically redirects to `/admin-dashboard`.
+    *   **Permissions:** Can view all users (encrypted), suspend/activate users, and monitor all transactions across the system without being able to decrypt the private details.
+*   **Authority Role**
+    *   **Login URL:** `http://localhost:5174/login` (with Authority credentials: `authority@example.com` / `Authority@12345`)
+    *   **Main Navigation:** Automatically redirects to `/authority-dashboard`.
+    *   **Permissions:** Responsible for verifying KYC (Know Your Customer) requests, approving user accounts, and issuing the cryptographic keys (RSA/ECC) upon approval.
+
+### 3. How to Navigate Each Feature (Step-by-Step)
+
+#### Feature 1: Registration & 2FA Setup
+1. Go to `http://localhost:5174/register` to create a new User account.
+2. The system will automatically log you in and take you to the User Dashboard.
+3. To setup 2FA, navigate to your Profile (if implemented) or follow the prompts, scan the QR code with an Authenticator App, and enter the 6-digit code.
+
+#### Feature 2: Deposit Funds (Fake Payment Gateway)
+1. On the Dashboard, click the green **Deposit Funds** button.
+2. Enter the amount you wish to deposit (e.g., `$500`).
+3. Click "Continue to Payment".
+4. Enter the test card details: 
+   * Use **`4111-1111-1111-1111`** for a **Successful** payment.
+   * Use **`4444-4444-4444-4444`** to test a **Declined** payment.
+5. Provide any Expiry Date and CVV.
+6. The backend processes this atomically, updates your ledger balance, and redirects you back to the Dashboard with your new balance.
+
+#### Feature 3: Send Money (Transfers & Privacy Levels)
+1. On the Dashboard, click the white **Send Money** button.
+2. Select a recipient from the dropdown.
+3. Enter the amount to send.
+4. **Select a Privacy Level:**
+   * **Standard:** Basic transaction metadata.
+   * **Private Metadata:** Information is partially encrypted.
+   * **High Privacy:** Utilizes ECC to fully encrypt the transaction payload.
+5. Click transfer. The system validates the balance, encrypts the payload, signs it with HMAC, and hashes it before committing.
+
+#### Feature 4: View Encrypted Transaction History
+1. From the Dashboard, click **History** or the transparent History button.
+2. You will see a list of Sent and Received transactions. 
+3. The backend automatically decrypts the RSA/ECC payloads using your stored keys before serving them to your frontend, proving the end-to-end encryption works seamlessly.
+
+---
+
 **Built with ❤️ for secure, private banking in the digital age**

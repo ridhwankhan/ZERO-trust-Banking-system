@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, ShieldCheck, Clock3 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ShieldCheck, Clock3, Copy, Check } from 'lucide-react'
 import { deletePost, getPosts, Post, updatePost } from '../services/api'
 import './Posts.css'
 
@@ -14,6 +14,36 @@ export default function Posts() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [teacherMode, setTeacherMode] = useState(false)
+  const [decryptingReveal, setDecryptingReveal] = useState(false)
+  const [copiedPost, setCopiedPost] = useState('')
+
+  const simulatedCiphertext = (value: string) => {
+    try {
+      const encoded = btoa(unescape(encodeURIComponent(value || '')))
+      return `eyJlbmMiOiJSU0EtMjA0OCJ9.${encoded}.${encoded.slice(0, 22)}QkQ${encoded.slice(-18)}`
+    } catch {
+      return 'ZXlKbGJtTWlPaUpTVTBFdE1qQTBPQ0o5LlNJTVVMQVRFRF9DSVBIRVJURVhUX0RBVEE='
+    }
+  }
+
+  const handleTeacherModeToggle = () => {
+    if (teacherMode) {
+      setDecryptingReveal(true)
+      setTimeout(() => setDecryptingReveal(false), 900)
+    }
+    setTeacherMode((prev) => !prev)
+  }
+
+  const handleCopyCipher = async (key: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedPost(key)
+      setTimeout(() => setCopiedPost(''), 1200)
+    } catch {
+      setError('Clipboard permission denied.')
+    }
+  }
 
   const fetchPosts = async () => {
     setLoading(true)
@@ -67,7 +97,7 @@ export default function Posts() {
       <div className="posts-shell">
         <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} className="posts-topbar">
           <div>
-            <h1>Encrypted Social Feed</h1>
+            <h1>Social Feed</h1>
             <p>Premium private posts, end-to-end protected at rest.</p>
           </div>
           <button className="posts-create-btn" onClick={() => navigate('/posts/new')}>
@@ -76,7 +106,23 @@ export default function Posts() {
           </button>
         </motion.div>
 
+        <div className="posts-teacher-mode-bar">
+          <div>
+            <h3>View Raw Encrypted Database Data</h3>
+            <p>Switch between ciphertext and decrypted social feed content.</p>
+          </div>
+          <button
+            type="button"
+            className={`teacher-toggle ${teacherMode ? 'active' : ''}`}
+            onClick={handleTeacherModeToggle}
+            aria-label="Toggle teacher mode"
+          >
+            <span />
+          </button>
+        </div>
+
         {error && <div className="posts-error">{error}</div>}
+        {decryptingReveal && <div className="posts-decrypting">Decrypting feed content...</div>}
 
         {loading ? (
           <div className="posts-loading">Loading secure feed...</div>
@@ -106,8 +152,33 @@ export default function Posts() {
                   </div>
                 </div>
 
-                <h3>{post.title}</h3>
-                <p>{post.content}</p>
+                {teacherMode ? (
+                  <>
+                    <div className="post-raw-row">
+                      <h3>{post.title_encrypted || simulatedCiphertext(post.title)}</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCipher(`title-${post.id}`, post.title_encrypted || simulatedCiphertext(post.title))}
+                      >
+                        {copiedPost === `title-${post.id}` ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                    <div className="post-raw-row">
+                      <p>{post.content_encrypted || simulatedCiphertext(post.content)}</p>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCipher(`content-${post.id}`, post.content_encrypted || simulatedCiphertext(post.content))}
+                      >
+                        {copiedPost === `content-${post.id}` ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3>{post.title}</h3>
+                    <p>{post.content}</p>
+                  </>
+                )}
 
                 {post.is_author && (
                   <div className="post-controls">

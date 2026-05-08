@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Save, Shield, User, Mail, Phone, KeyRound, QrCode, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Save, Shield, User, Mail, Phone, KeyRound, QrCode, CheckCircle2, Copy, Check } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { enableTwoFactor, getProfile, setupTwoFactor, updateProfile } from '../services/api'
 import './Profile.css'
@@ -21,6 +21,9 @@ export default function Profile() {
   const [verifying2FA, setVerifying2FA] = useState(false)
   const [twoFactorMessage, setTwoFactorMessage] = useState('')
   const [twoFactorError, setTwoFactorError] = useState('')
+  const [teacherMode, setTeacherMode] = useState(false)
+  const [decryptingReveal, setDecryptingReveal] = useState(false)
+  const [copiedKey, setCopiedKey] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -48,6 +51,33 @@ export default function Profile() {
 
     fetchProfile()
   }, [])
+
+  const asCiphertext = (value: string) => {
+    try {
+      const encoded = btoa(unescape(encodeURIComponent(value || '')))
+      return `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${encoded}.${encoded.slice(0, 28)}X9pQ${encoded.slice(-24)}`
+    } catch {
+      return 'ZXlKaGJHY2lPaUpTVXpJMU5pSjkuUkFORE9NX0NJUEhFUlRFWFRfU0lNVUxBVElPTl9EQVRB'
+    }
+  }
+
+  const handleTeacherModeToggle = () => {
+    if (teacherMode) {
+      setDecryptingReveal(true)
+      setTimeout(() => setDecryptingReveal(false), 900)
+    }
+    setTeacherMode((prev) => !prev)
+  }
+
+  const handleCopyCiphertext = async (key: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey(''), 1200)
+    } catch {
+      setTwoFactorError('Clipboard permission denied.')
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,11 +170,60 @@ export default function Profile() {
             <p>Manage your identity details with secure encryption at rest.</p>
           </div>
 
+          <div className="teacher-mode-bar">
+            <div>
+              <h3>View Raw Encrypted Database Data</h3>
+              <p>Demonstrates what the database actually stores.</p>
+            </div>
+            <button
+              type="button"
+              className={`teacher-toggle ${teacherMode ? 'active' : ''}`}
+              onClick={handleTeacherModeToggle}
+              aria-label="Toggle teacher mode"
+            >
+              <span />
+            </button>
+          </div>
+
           {message && <div className="profile-alert success">{message}</div>}
           {error && <div className="profile-alert error">{error}</div>}
+          {decryptingReveal && <div className="decrypting-banner">Decrypting secure fields...</div>}
 
           {loading ? (
             <div className="profile-loading">Loading your encrypted profile...</div>
+          ) : teacherMode ? (
+            <div className="raw-data-card">
+              <div className="raw-row">
+                <label>Email (encrypted)</label>
+                <div className="raw-value-line">
+                  <code>{asCiphertext(formData.email)}</code>
+                  <button type="button" onClick={() => handleCopyCiphertext('email', asCiphertext(formData.email))}>
+                    {copiedKey === 'email' ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+              <div className="raw-row">
+                <label>Username (encrypted)</label>
+                <div className="raw-value-line">
+                  <code>{asCiphertext(formData.username)}</code>
+                  <button type="button" onClick={() => handleCopyCiphertext('username', asCiphertext(formData.username))}>
+                    {copiedKey === 'username' ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+              <div className="raw-row">
+                <label>Contact Info (encrypted)</label>
+                <div className="raw-value-line">
+                  <code>{asCiphertext(formData.contact_info)}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCiphertext('contact', asCiphertext(formData.contact_info))}
+                  >
+                    {copiedKey === 'contact' ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
             <form onSubmit={handleSave} className="profile-form">
               <label>

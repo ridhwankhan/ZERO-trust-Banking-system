@@ -3,6 +3,7 @@ import os
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction as db_transaction
 from django.db.models import Q
 from django.utils.dateparse import parse_datetime
@@ -275,74 +276,34 @@ class TransactionPrivacyStatsView(APIView):
 
 class PostViewSet(viewsets.ModelViewSet):
     """
-    Encrypted posts feed.
-    - Stores title/content encrypted with the author's RSA public key.
-    - Returns decrypted fields when RSA private key is available in memory.
+    Social posts feed.
+    - Stores title/content in plaintext for all users to see.
     """
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = Post.objects.select_related('author').all()
 
-    def _encrypt_post_data(self, user, title, content):
-        if not user.public_key:
-            raise ValueError("User public key missing. Re-login to regenerate keys.")
-        public_key = deserialize_public_key(user.public_key)
-        return (
-            rsa_encrypt(title, public_key),
-            rsa_encrypt(content, public_key),
-        )
-
     def perform_create(self, serializer):
         title = self.request.data.get('title', '').strip()
         content = self.request.data.get('content', '').strip()
         if not title or not content:
-            raise ValueError("Both title and content are required.")
+            raise ValidationError({'error': 'Both title and content are required.'})
 
-        try:
-            title_encrypted, content_encrypted = self._encrypt_post_data(
-                self.request.user,
-                title,
-                content,
-            )
-        except Exception as exc:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'error': str(exc)})
-
-        serializer.save(
-            author=self.request.user,
-            title_encrypted=title_encrypted,
-            content_encrypted=content_encrypted,
-        )
+        serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
         post = self.get_object()
         if post.author_id != self.request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You can only edit your own posts.")
 
         title = self.request.data.get('title', '').strip()
         content = self.request.data.get('content', '').strip()
         if not title or not content:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError({'error': 'Both title and content are required.'})
 
-        try:
-            title_encrypted, content_encrypted = self._encrypt_post_data(
-                self.request.user,
-                title,
-                content,
-            )
-        except Exception as exc:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'error': str(exc)})
-
-        serializer.save(
-            title_encrypted=title_encrypted,
-            content_encrypted=content_encrypted,
-        )
+        serializer.save()
 
     def perform_destroy(self, instance):
         if instance.author_id != self.request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You can only delete your own posts.")
         instance.delete()

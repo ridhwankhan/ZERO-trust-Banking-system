@@ -52,12 +52,12 @@ I need to build an Encrypted Posts Module to satisfy a core project requirement.
 ## 📌 Prompt 4: The "Wow" Factors - Visualizing Cryptography (Phase 4)
 **Copy this:**
 ```text
-I want to add visual "Wow" factors for my final year project presentation to show the teacher that the cryptography is actually working.
+    I want to add visual "Wow" factors for my final year project presentation to show the teacher that the cryptography is actually working.
 
-1. CRYPTO VISUALIZER WIDGET: On `Dashboard.tsx`, build a cool "Live Security Status" widget. It should show a pulsing green dot and text like: "Connection Secured | AES-256 Transport | RSA-2048 Data at Rest | HMAC-SHA256 Integrity Verified".
-2. RAW DATA TOGGLE (THE BIG WOW): On the `Profile.tsx` and `Posts.tsx` pages, add a premium-looking toggle switch at the top labeled "Teacher Mode: View Raw Encrypted Database Data".
-3. TOGGLE LOGIC: When this toggle is turned ON, replace the readable text (like the user's contact info or post content) with a long string of random ciphertext (e.g., `eyJhbGciOiJSUzI1NiIsI...`) to simulate exactly what the database sees. When turned OFF, play a quick "decrypting" text animation that reveals the real text.
-This will definitively prove the encryption requirement is met during the demo.
+    1. CRYPTO VISUALIZER WIDGET: On `Dashboard.tsx`, build a cool "Live Security Status" widget. It should show a pulsing green dot and text like: "Connection Secured | AES-256 Transport | RSA-2048 Data at Rest | HMAC-SHA256 Integrity Verified".
+    2. RAW DATA TOGGLE (THE BIG WOW): On the `Profile.tsx` and `Posts.tsx` pages, add a premium-looking toggle switch at the top labeled "Teacher Mode: View Raw Encrypted Database Data".
+    3. TOGGLE LOGIC: When this toggle is turned ON, replace the readable text (like the user's contact info or post content) with a long string of random ciphertext (e.g., `eyJhbGciOiJSUzI1NiIsI...`) to simulate exactly what the database sees. When turned OFF, play a quick "decrypting" text animation that reveals the real text.
+    This will definitively prove the encryption requirement is met during the demo.
 ```
 
 ---

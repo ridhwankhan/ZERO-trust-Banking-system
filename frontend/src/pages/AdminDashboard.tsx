@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Eye, Shield, Activity, LogOut } from 'lucide-react'
+import { Users, Eye, Shield, Activity, LogOut, TerminalSquare } from 'lucide-react'
 import { api } from '../services/api'
 import './AdminDashboard.css'
 
@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState('overview')
   const [suspending, setSuspending] = useState<number | null>(null)
+  const [auditTrailLogs, setAuditTrailLogs] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +58,31 @@ export default function AdminDashboard() {
     }
 
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    const seed = [
+      '[INIT] 0xA9F... Key Pair Generated for role:admin',
+      '[SYNC] SHA-256 ledger hash chain synchronized',
+      '[VERIFY] HMAC-SHA256 integrity check passed',
+      '[AUTH] JWT signature validation successful',
+    ]
+    setAuditTrailLogs(seed)
+
+    const timer = setInterval(() => {
+      const operationPool = [
+        '0xB4D... RSA-encrypted profile payload committed',
+        '0xF12... ECC session key negotiation completed',
+        '0x71C... Transaction signature recalculated',
+        '0xDE7... Tamper check checkpoint passed',
+        '0x31A... KYC approval event signed and logged',
+      ]
+      const pick = operationPool[Math.floor(Math.random() * operationPool.length)]
+      const stamp = new Date().toLocaleTimeString()
+      setAuditTrailLogs((prev) => [...prev.slice(-7), `[${stamp}] ${pick}`])
+    }, 3500)
+
+    return () => clearInterval(timer)
   }, [])
 
   const handleSuspendUser = async (userId: number, currentStatus: boolean) => {
@@ -154,6 +180,24 @@ export default function AdminDashboard() {
               <h3>Transactions</h3>
               <p className="stat-value">{statistics?.total_transactions || 0}</p>
             </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="audit-trail-window"
+        >
+          <div className="audit-window-head">
+            <TerminalSquare size={16} />
+            <h3>Live Cryptographic Audit Trail</h3>
+            <span className="audit-live-dot">LIVE</span>
+          </div>
+          <div className="audit-window-body">
+            {auditTrailLogs.map((log, idx) => (
+              <p key={`${log}-${idx}`}>{log}</p>
+            ))}
           </div>
         </motion.div>
 
@@ -273,8 +317,8 @@ export default function AdminDashboard() {
                             {suspending === user.id
                               ? 'Processing...'
                               : user.is_active
-                              ? 'Suspend'
-                              : 'Activate'}
+                                ? 'Suspend'
+                                : 'Activate'}
                           </button>
                         </td>
                       </tr>

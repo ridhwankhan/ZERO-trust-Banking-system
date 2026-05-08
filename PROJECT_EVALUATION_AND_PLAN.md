@@ -83,7 +83,7 @@ To fully fulfill the whole process and complete the project, we need to execute 
 
 **Frontend Tasks:**
 1.  Update the registration form (`frontend/src/pages/Register.tsx`) to include a "Contact Info" input field.
-2.  Create a new `Profile.tsx` page where users can view their current information and submit updates.
+2.  Create a new `Profile.tsx` page where users can view their current information and submit updates.2
 3.  Add `/profile` to the React Router (`App.tsx`) and add a navigation link in the user Dashboard.
 
 ### Phase 2: Implement Encrypted Posts Module
