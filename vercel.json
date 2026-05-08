@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "regions": ["iad1"],
+  "env": {
+    "VITE_API_BASE_URL": "@api_base_url"
+  }
+}
