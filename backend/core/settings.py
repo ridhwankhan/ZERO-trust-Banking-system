@@ -1,9 +1,14 @@
 import os
-import pymysql
 from pathlib import Path
 from dotenv import load_dotenv
 
-pymysql.install_as_MySQLdb()
+# Only import PyMySQL for local MySQL development (not for Render's PostgreSQL)
+if not os.getenv('DATABASE_URL'):
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        pass
 
 load_dotenv()
 
