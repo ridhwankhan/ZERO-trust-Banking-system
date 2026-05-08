@@ -14,7 +14,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me')
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+# Handle Railway's dynamic domain
+railway_domain = os.getenv('RAILWAY_STATIC_URL', '').replace('https://', '').replace('http://', '')
+allowed_hosts = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+if railway_domain:
+    allowed_hosts.append(railway_domain)
+ALLOWED_HOSTS = list(set(allowed_hosts))  # Remove duplicates
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -72,19 +77,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'banking_system'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3308'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+# Database configuration - supports both Railway (PostgreSQL) and local MySQL
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Railway provides DATABASE_URL for PostgreSQL
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
     }
-}
+else:
+    # Local MySQL configuration (XAMPP)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DB_NAME', 'banking_system'),
+            'USER': os.getenv('DB_USER', 'root'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '3308'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -121,10 +137,14 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000'
+    'https://zero-trust-banking-system.vercel.app,http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000'
 ).split(',')
 
-CORS_ALLOW_CREDENTIALS = True
+# CSRF trusted origins for production
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://zero-trust-banking-system.vercel.app'
+).split(',')
 
 # JWT Settings
 from datetime import timedelta
