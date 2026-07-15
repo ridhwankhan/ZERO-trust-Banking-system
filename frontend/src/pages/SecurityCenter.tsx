@@ -62,7 +62,7 @@ export default function SecurityCenter() {
         api.get('/security/me/login-history/'),
         api.get('/security/me/devices/'),
         api.get('/security/me/alerts/'),
-        api.get('/security/me/status/')
+        api.get('/auth/profile/')
       ])
       setLogins(loginsRes.data.results || loginsRes.data || [])
       setDevices(devicesRes.data.results || devicesRes.data || [])

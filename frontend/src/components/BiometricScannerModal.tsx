@@ -53,7 +53,7 @@ export default function BiometricScannerModal({
       
       // Handle known WebAuthn errors
       if (err.name === 'NotAllowedError') {
-        setError('Request cancelled or timed out.')
+        setError('Biometric mismatch or request cancelled. Please try again with proper Face/Fingerprint.')
       } else if (err.name === 'InvalidStateError') {
         setError('A passkey is already registered on this device.')
       } else {

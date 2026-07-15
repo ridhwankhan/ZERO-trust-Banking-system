@@ -193,6 +193,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'crypto_status',
+            'transaction_frozen',
         )
         read_only_fields = (
             'id',
@@ -203,6 +204,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'two_factor_enabled',
             'created_at',
             'updated_at',
+            'transaction_frozen',
         )
     
     def get_contact_info(self, obj):

@@ -88,12 +88,34 @@ function AnimatedRoutes() {
     const handleBlur = () => document.body.classList.add('privacy-mode')
     const handleFocus = () => document.body.classList.remove('privacy-mode')
     
+    // Visibility API is faster than window blur for tab switching
+    const handleVisibility = () => {
+      if (document.hidden) {
+        document.body.classList.add('privacy-mode')
+      } else {
+        document.body.classList.remove('privacy-mode')
+      }
+    }
+
+    // Intercept PrintScreen key to instantly blur and clear clipboard
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'PrintScreen') {
+        document.body.classList.add('privacy-mode')
+        navigator.clipboard.writeText('') // Clear clipboard to prevent copying screenshot if possible
+        setTimeout(() => document.body.classList.remove('privacy-mode'), 2000) // Unblur after 2 seconds
+      }
+    }
+    
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibility)
+    document.addEventListener('keyup', handleKeyUp)
     
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      document.removeEventListener('keyup', handleKeyUp)
     }
   }, [])
 
