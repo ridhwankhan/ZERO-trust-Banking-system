@@ -8,6 +8,7 @@ import {
   Send,
   CreditCard,
   Wifi,
+  Check
 } from 'lucide-react'
 import { getBalance, getTransactionHistory } from '../services/api'
 import './Dashboard.css'
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
+  const [copied, setCopied] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   // Fetch on mount and when location changes (returning from deposit)
@@ -107,12 +109,13 @@ export default function Dashboard() {
               onClick={() => {
                 if (user.card_number) {
                   navigator.clipboard.writeText(user.card_number)
-                  alert('Card number copied to clipboard!')
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 5000)
                 }
               }}
-              style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+              style={{ background: 'none', border: 'none', color: copied ? '#4ade80' : '#60a5fa', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              COPY
+              {copied ? <><Check size={14} /> COPIED</> : 'COPY'}
             </button>
           </motion.div>
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
@@ -81,6 +82,20 @@ const Page = ({ children }: { children: React.ReactNode }) => (
 
 function AnimatedRoutes() {
   const location = useLocation()
+  
+  // Auto-Privacy Mode (Anti-Screen Capture & Spyware)
+  useEffect(() => {
+    const handleBlur = () => document.body.classList.add('privacy-mode')
+    const handleFocus = () => document.body.classList.remove('privacy-mode')
+    
+    window.addEventListener('blur', handleBlur)
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
 
   return (
     <AnimatePresence mode="wait">

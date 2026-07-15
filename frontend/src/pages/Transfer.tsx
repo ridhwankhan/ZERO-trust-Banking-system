@@ -145,9 +145,9 @@ export default function Transfer() {
           </motion.div>
         ) : (
           <form onSubmit={handleTransfer}>
-            <div className="balance-card">
+            <div className="transfer-balance-card">
               <span className="balance-label">Available Balance</span>
-              <span className="balance-amount">${userBalance}</span>
+              <span className="transfer-balance-amount">${userBalance}</span>
             </div>
 
             {error && (

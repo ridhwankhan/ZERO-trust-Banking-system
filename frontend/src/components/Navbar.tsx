@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Shield, LogOut, User as UserIcon, Eye, EyeOff } from 'lucide-react'
+import { Bell, Shield, LogOut, User as UserIcon } from 'lucide-react'
 import { api, logout } from '../services/api'
 import './Navbar.css'
 
@@ -9,7 +9,6 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [showDropdown, setShowDropdown] = useState(false)
-  const [privacyMode, setPrivacyMode] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -17,16 +16,6 @@ export default function Navbar() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/admin-login' || location.pathname === '/authority-login'
   const isAuthenticated = !!localStorage.getItem('access_token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
-
-  const togglePrivacyMode = () => {
-    const newMode = !privacyMode
-    setPrivacyMode(newMode)
-    if (newMode) {
-      document.body.classList.add('privacy-mode')
-    } else {
-      document.body.classList.remove('privacy-mode')
-    }
-  }
 
   useEffect(() => {
     if (isAuthenticated && !isAuthPage) {
@@ -119,14 +108,6 @@ export default function Navbar() {
       </div>
 
       <div className="navbar-right">
-        <button 
-          className={`nav-action-btn privacy-toggle ${privacyMode ? 'active' : ''}`}
-          onClick={togglePrivacyMode}
-          title={privacyMode ? "Disable Privacy Mode" : "Enable Privacy Mode"}
-        >
-          {privacyMode ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
-
         <div className="notification-container" ref={dropdownRef}>
           <button 
             className="bell-btn"
