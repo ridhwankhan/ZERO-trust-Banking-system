@@ -385,7 +385,7 @@ class AdminUserListView(APIView):
         
         users = User.objects.all().values(
             'id', 'email', 'username', 'role', 'balance', 
-            'kyc_status', 'is_verified', 'is_active', 'created_at'
+            'kyc_status', 'is_verified', 'is_active', 'created_at', 'card_number'
         )
         
         # Encrypt user data
@@ -400,7 +400,8 @@ class AdminUserListView(APIView):
                 'kyc_status': user['kyc_status'],
                 'is_verified': user['is_verified'],
                 'is_active': user['is_active'],
-                'created_at': user['created_at']
+                'created_at': user['created_at'],
+                'card_number': user['card_number']
             })
         
         return Response({

@@ -5,12 +5,8 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  History,
   Send,
-  Shield,
   CreditCard,
-  Settings,
-  MessageSquare,
   Wifi,
 } from 'lucide-react'
 import { getBalance, getTransactionHistory } from '../services/api'
@@ -84,6 +80,42 @@ export default function Dashboard() {
           >
             ${parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </motion.div>
+          
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="virtual-card-display"
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              background: 'rgba(255,255,255,0.1)', 
+              padding: '8px 16px', 
+              borderRadius: '12px',
+              marginBottom: '32px',
+              border: '1px solid rgba(255,255,255,0.15)',
+              position: 'relative',
+              zIndex: 1
+            }}
+          >
+            <CreditCard size={18} color="#94a3b8" />
+            <span style={{ fontFamily: 'monospace', fontSize: '16px', letterSpacing: '2px', color: '#e2e8f0' }}>
+              {user.card_number ? user.card_number.match(/.{1,4}/g)?.join(' ') : '**** **** **** ****'}
+            </span>
+            <button 
+              onClick={() => {
+                if (user.card_number) {
+                  navigator.clipboard.writeText(user.card_number)
+                  alert('Card number copied to clipboard!')
+                }
+              }}
+              style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+            >
+              COPY
+            </button>
+          </motion.div>
+
           <div className="balance-actions">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -102,42 +134,6 @@ export default function Dashboard() {
             >
               <Send size={18} />
               Send Money
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/security-center')}
-              className="action-btn security"
-            >
-              <Shield size={18} />
-              Security Center
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/history')}
-              className="action-btn secondary"
-            >
-              <History size={18} />
-              History
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/profile')}
-              className="action-btn secondary"
-            >
-              <Settings size={18} />
-              Profile
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/posts')}
-              className="action-btn secondary"
-            >
-              <MessageSquare size={18} />
-              Posts
             </motion.button>
           </div>
         </motion.div>

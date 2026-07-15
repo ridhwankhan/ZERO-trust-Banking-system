@@ -10,6 +10,7 @@ interface AdminUser {
   username_encrypted: string
   role: string
   balance: number
+  card_number?: string
   kyc_status: string
   is_verified: boolean
   is_active: boolean
@@ -276,7 +277,7 @@ export default function AdminDashboard() {
                     <tr>
                       <th>ID</th>
                       <th>Email</th>
-                      <th>Username</th>
+                      <th>Card Number</th>
                       <th>Balance</th>
                       <th>KYC Status</th>
                       <th>Status</th>
@@ -292,7 +293,9 @@ export default function AdminDashboard() {
                           <code className="encrypted">{user.email_encrypted.substring(0, 20)}...</code>
                         </td>
                         <td>
-                          <code className="encrypted">{user.username_encrypted.substring(0, 20)}...</code>
+                          <code className="encrypted" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                            {user.card_number ? user.card_number.match(/.{1,4}/g)?.join(' ') : 'No Card'}
+                          </code>
                         </td>
                         <td className="amount">${user.balance.toFixed(2)}</td>
                         <td>
