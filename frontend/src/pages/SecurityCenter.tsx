@@ -91,15 +91,9 @@ export default function SecurityCenter() {
     }
   }
 
-  const handleEnrollFace = async (hash: string) => {
-    try {
-      await api.post('/security/me/devices/enroll-face/', { face_signature_hash: hash })
-      alert('Face biometric profile successfully enrolled on this device!')
-      fetchData() // refresh to show enrolled status
-    } catch (err) {
-      console.error('Failed to enroll face', err)
-      alert('Failed to enroll face biometric.')
-    }
+  const handleEnrollFace = async () => {
+    alert('Passkey successfully enrolled on this device!')
+    fetchData() // refresh to show enrolled status
   }
 
   const riskColor = (level: string) => {
@@ -181,7 +175,7 @@ export default function SecurityCenter() {
                     style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.2)' }}
                     onClick={() => setShowScanner(true)}
                   >
-                    <UserPlus size={14} /> Enroll Face on Current Device
+                    <UserPlus size={14} /> Enroll Passkey on Current Device
                   </button>
                 </div>
 

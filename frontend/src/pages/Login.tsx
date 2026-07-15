@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Shield, ArrowRight, KeyRound, UserCheck } from 'lucide-react'
-import { login, verifyTwoFactorLogin } from '../services/api'
-import BiometricScannerModal from '../components/BiometricScannerModal'
+import { login, verifyTwoFactorLogin, api } from '../services/api'
+import { startAuthentication } from '@simplewebauthn/browser'
 import './Auth.css'
 
 export default function Login() {
@@ -17,24 +17,61 @@ export default function Login() {
   const [twoFactorStep, setTwoFactorStep] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [pendingUserId, setPendingUserId] = useState<number | null>(null)
-  const [showFaceScanner, setShowFaceScanner] = useState(false)
 
-  const handleSubmit = async (e?: React.FormEvent, faceHash?: string) => {
+  const handlePasskeyLogin = async () => {
+    if (!formData.email) {
+      setError('Please enter your email first to use Passkey.')
+      return
+    }
+    
+    setLoading(true)
+    setError('')
+    try {
+      // 1. Get auth options from server
+      const resp = await api.post('/security/webauthn/authenticate/generate-options/', { email: formData.email })
+      const options = resp.data
+
+      // 2. Trigger native OS biometric prompt
+      const asseResp = await startAuthentication(options)
+
+      // 3. Send signature to server
+      const verifyResp = await api.post('/security/webauthn/authenticate/verify/', {
+        email: formData.email,
+        credential: asseResp
+      })
+
+      const response = verifyResp.data
+
+      if (response.user?.two_factor_enabled) {
+        setPendingUserId(response.user.id)
+        setTwoFactorStep(true)
+        return
+      }
+
+      localStorage.setItem('access_token', response.access)
+      localStorage.setItem('refresh_token', response.refresh)
+      localStorage.setItem('user', JSON.stringify(response.user))
+      navigate('/dashboard')
+
+    } catch (err: any) {
+      console.error("Passkey login failed:", err)
+      if (err.name === 'NotAllowedError') {
+        setError('Login cancelled.')
+      } else {
+        setError(err.response?.data?.error || err.message || 'Passkey login failed.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      // For face login, we need a custom API call with the header
-      let response;
-      if (faceHash) {
-        const { api } = await import('../services/api');
-        const res = await api.post('/auth/login/', formData, {
-          headers: { 'X-Face-Signature': faceHash }
-        });
-        response = res.data;
-      } else {
-        response = await login(formData)
-      }
+      const response = await login(formData)
+      
       if (response.user?.two_factor_enabled) {
         setPendingUserId(response.user.id)
         setTwoFactorStep(true)
@@ -185,15 +222,9 @@ export default function Login() {
                 type="button"
                 className="auth-button"
                 style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.2)', marginTop: '0.5rem' }}
-                onClick={() => {
-                  if (!formData.email || !formData.password) {
-                    setError('Enter email and password first, then verify with face.')
-                    return
-                  }
-                  setShowFaceScanner(true)
-                }}
+                onClick={handlePasskeyLogin}
               >
-                <UserCheck size={20} style={{ marginRight: '0.5rem' }} /> Log in with Face Biometric
+                <UserCheck size={20} style={{ marginRight: '0.5rem' }} /> Log in with Passkey / Face ID
               </button>
             </motion.form>
           ) : (
@@ -275,12 +306,6 @@ export default function Login() {
         )}
       </motion.div>
 
-      <BiometricScannerModal 
-        isOpen={showFaceScanner} 
-        onClose={() => setShowFaceScanner(false)} 
-        onScanSuccess={(hash) => handleSubmit(undefined, hash)} 
-        title="Biometric Face Login" 
-      />
     </div>
   )
 }

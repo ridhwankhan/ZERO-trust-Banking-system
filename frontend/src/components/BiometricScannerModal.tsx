@@ -1,5 +1,7 @@
-import { useRef, useEffect, useState } from 'react'
-import { X, Check, ShieldAlert } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Check, ShieldAlert, Fingerprint } from 'lucide-react'
+import { startRegistration } from '@simplewebauthn/browser'
+import { api } from '../services/api'
 import './BiometricScannerModal.css'
 
 interface BiometricScannerModalProps {
@@ -13,149 +15,111 @@ export default function BiometricScannerModal({
   isOpen,
   onClose,
   onScanSuccess,
-  title = "Biometric Face Recognition"
+  title = "Register Passkey / Biometrics"
 }: BiometricScannerModalProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<'initializing' | 'ready' | 'scanning' | 'success'>('initializing')
-  const [progress, setProgress] = useState(0)
+  const [status, setStatus] = useState<'ready' | 'scanning' | 'success'>('ready')
 
   useEffect(() => {
-    if (!isOpen) return
-
-    setStatus('initializing')
-    setError(null)
-    setProgress(0)
-
-    navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400, facingMode: 'user' } })
-      .then(mediaStream => {
-        setStream(mediaStream)
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream
-        }
-        setStatus('ready')
-      })
-      .catch(err => {
-        console.error("Camera access failed:", err)
-        setError("Unable to access camera. Please check permissions.")
-        setStatus('ready')
-      })
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
-      }
+    if (isOpen) {
+      setStatus('ready')
+      setError(null)
     }
   }, [isOpen])
 
-  // Scan simulation
-  useEffect(() => {
-    if (status !== 'scanning') return
-
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          captureAndVerify()
-          return 100
-        }
-        return prev + 10
-      })
-    }, 150)
-
-    return () => clearInterval(interval)
-  }, [status])
-
-  const startScan = () => {
-    setProgress(0)
+  const startScan = async () => {
     setStatus('scanning')
-  }
+    setError(null)
+    
+    try {
+      // 1. Get registration options from the server
+      const resp = await api.get('/security/webauthn/register/generate-options/')
+      const options = resp.data
 
-  const captureAndVerify = () => {
-    if (!videoRef.current || !canvasRef.current) return
+      // 2. Pass options to the browser to trigger native biometric prompt (Windows Hello, FaceID, TouchID)
+      const attResp = await startRegistration(options)
 
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-    if (!context) return
-
-    canvas.width = 128
-    canvas.height = 128
-    context.drawImage(video, 0, 0, 128, 128)
-
-    // Generate a pseudo-signature from actual pixel data
-    const imgData = context.getImageData(0, 0, 128, 128)
-    let sum = 0
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      // average gray level
-      sum += (imgData.data[i] + imgData.data[i+1] + imgData.data[i+2]) / 3
+      // 3. Send the response back to the server for verification
+      await api.post('/security/webauthn/register/verify/', attResp)
+      
+      setStatus('success')
+      setTimeout(() => {
+        onScanSuccess("webauthn_enrolled")
+        onClose()
+      }, 2000)
+      
+    } catch (err: any) {
+      console.error("Biometric registration failed:", err)
+      
+      // Handle known WebAuthn errors
+      if (err.name === 'NotAllowedError') {
+        setError('Request cancelled or timed out.')
+      } else if (err.name === 'InvalidStateError') {
+        setError('A passkey is already registered on this device.')
+      } else {
+        setError(err.response?.data?.error || err.message || 'Biometric enrollment failed.')
+      }
+      setStatus('ready')
     }
-    // simple deterministic hash from pixel sum
-    const signatureHash = "face_sig_" + Math.round(sum).toString(16) + "_" + Math.random().toString(36).substr(2, 9)
-
-    setStatus('success')
-    setTimeout(() => {
-      onScanSuccess(signatureHash)
-      handleClose()
-    }, 1200)
-  }
-
-  const handleClose = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
-    }
-    onClose()
   }
 
   if (!isOpen) return null
 
   return (
     <div className="bs-overlay">
-      <div className="bs-modal">
+      <div className="bs-modal" style={{ maxWidth: '400px', height: 'auto', minHeight: '350px' }}>
         <div className="bs-header">
           <h3>{title}</h3>
-          <button className="bs-close" onClick={handleClose}><X size={18} /></button>
+          <button className="bs-close" onClick={onClose}><X size={18} /></button>
         </div>
 
-        <div className="bs-viewport-container">
+        <div className="bs-viewport-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           {error ? (
-            <div className="bs-error">
-              <ShieldAlert size={48} className="bs-error-icon" />
+            <div className="bs-error" style={{ textAlign: 'center', color: '#ef4444' }}>
+              <ShieldAlert size={48} className="bs-error-icon" style={{ margin: '0 auto 1rem' }} />
               <p>{error}</p>
+              <button 
+                onClick={() => setError(null)} 
+                className="bs-action-btn"
+                style={{ marginTop: '1rem', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }}
+              >
+                Try Again
+              </button>
             </div>
           ) : (
-            <div className="bs-viewport">
-              <video ref={videoRef} autoPlay playsInline muted className="bs-video"></video>
+            <div className="bs-viewport" style={{ textAlign: 'center' }}>
               
               {status === 'ready' && (
                 <div className="bs-prompt">
-                  <p>Align face inside the frame and click start</p>
-                  <button className="bs-action-btn" onClick={startScan}>Start Biometric Scan</button>
+                  <Fingerprint size={64} style={{ color: '#60a5fa', marginBottom: '1.5rem' }} />
+                  <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '2rem' }}>
+                    Secure your account with industry-standard Passkeys. Use your device's built-in Face ID, Touch ID, or Windows Hello.
+                  </p>
+                  <button className="bs-action-btn" onClick={startScan} style={{ width: '100%', padding: '12px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                    Register Biometrics
+                  </button>
                 </div>
               )}
 
               {status === 'scanning' && (
-                <>
-                  <div className="bs-scanner-line"></div>
-                  <div className="bs-overlay-ring"></div>
-                  <div className="bs-progress-bar" style={{ width: `${progress}%` }}></div>
-                  <div className="bs-status-text">Scanning: {progress}%</div>
-                </>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div className="spinner" style={{ width: '48px', height: '48px', border: '4px solid #1e293b', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '1.5rem' }}></div>
+                  <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+                  <p style={{ color: '#e2e8f0', fontWeight: 500 }}>Follow the prompts on your device...</p>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '0.5rem' }}>Waiting for Face ID, Touch ID, or PIN.</p>
+                </div>
               )}
 
               {status === 'success' && (
-                <div className="bs-success-overlay">
-                  <Check size={48} className="bs-success-icon" />
-                  <p>Biometric Signature Encoded</p>
+                <div className="bs-success-overlay" style={{ background: 'transparent', position: 'static' }}>
+                  <Check size={64} className="bs-success-icon" style={{ color: '#22c55e', marginBottom: '1rem' }} />
+                  <h3 style={{ color: '#22c55e', margin: 0 }}>Passkey Enrolled</h3>
+                  <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '0.5rem' }}>You can now login securely without a password.</p>
                 </div>
               )}
             </div>
           )}
         </div>
-        <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
       </div>
     </div>
   )

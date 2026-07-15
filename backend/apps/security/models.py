@@ -235,3 +235,33 @@ class SecurityAlert(models.Model):
 
     def __str__(self):
         return f"[{self.severity.upper()}] {self.alert_type} - {self.created_at:%H:%M}"
+
+
+# ============================================================
+# MODULE 4: Biometrics (WebAuthn / Passkeys)
+# ============================================================
+
+class WebAuthnCredential(models.Model):
+    """
+    Stores FIDO2 / WebAuthn credentials (Passkeys) for secure,
+    passwordless biometric authentication (Face ID, Touch ID, Windows Hello).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='webauthn_credentials')
+    
+    # Credential metadata
+    credential_id = models.CharField(max_length=255, unique=True, help_text="Base64url encoded credential ID")
+    public_key = models.TextField(help_text="Base64url encoded public key bytes")
+    sign_count = models.BigIntegerField(default=0)
+    transports = models.JSONField(default=list, blank=True, help_text="List of supported transports (e.g. internal, usb, nfc)")
+    
+    # Device identification
+    device_name = models.CharField(max_length=100, default="Passkey Device")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'webauthn_credentials'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Passkey ({self.device_name}) for {self.user.email}"
