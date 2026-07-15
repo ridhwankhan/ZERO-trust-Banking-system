@@ -118,6 +118,12 @@ CORS_ALLOWED_ORIGINS = os.getenv(
 
 CORS_ALLOW_CREDENTIALS = True
 
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-device-fingerprint',
+    'x-face-signature',
+]
+
 # JWT Settings
 from datetime import timedelta
 
