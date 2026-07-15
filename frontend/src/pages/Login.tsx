@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Shield, ArrowRight, KeyRound } from 'lucide-react'
+import { Shield, ArrowRight, KeyRound, UserCheck } from 'lucide-react'
 import { login, verifyTwoFactorLogin } from '../services/api'
+import BiometricScannerModal from '../components/BiometricScannerModal'
 import './Auth.css'
 
 export default function Login() {
@@ -16,14 +17,29 @@ export default function Login() {
   const [twoFactorStep, setTwoFactorStep] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [pendingUserId, setPendingUserId] = useState<number | null>(null)
+  const [showFaceScanner, setShowFaceScanner] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent, faceHash?: string) => {
+    if (e) e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      const response = await login(formData)
+      const dataToSubmit = faceHash 
+        ? { ...formData, _face_signature: faceHash } // Not strictly standard but axios interceptor can't easily catch this, so we'll send it via custom header directly or in data. Wait, let's just pass it in headers during the api call.
+        : formData
+
+      // For face login, we need a custom API call with the header
+      let response;
+      if (faceHash) {
+        const { api } = await import('../services/api');
+        const res = await api.post('/auth/login/', formData, {
+          headers: { 'X-Face-Signature': faceHash }
+        });
+        response = res.data;
+      } else {
+        response = await login(formData)
+      }
       if (response.user?.two_factor_enabled) {
         setPendingUserId(response.user.id)
         setTwoFactorStep(true)
@@ -167,6 +183,21 @@ export default function Login() {
                   </>
                 )}
               </motion.button>
+
+              <button
+                type="button"
+                className="auth-button"
+                style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.2)', marginTop: '0.5rem' }}
+                onClick={() => {
+                  if (!formData.email || !formData.password) {
+                    setError('Enter email and password first, then verify with face.')
+                    return
+                  }
+                  setShowFaceScanner(true)
+                }}
+              >
+                <UserCheck size={20} style={{ marginRight: '0.5rem' }} /> Log in with Face Biometric
+              </button>
             </motion.form>
           ) : (
             <motion.form
@@ -246,6 +277,13 @@ export default function Login() {
           </p>
         )}
       </motion.div>
+
+      <BiometricScannerModal 
+        isOpen={showFaceScanner} 
+        onClose={() => setShowFaceScanner(false)} 
+        onScanSuccess={(hash) => handleSubmit(undefined, hash)} 
+        title="Biometric Face Login" 
+      />
     </div>
   )
 }

@@ -2,14 +2,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Only import PyMySQL for local MySQL development (not for Render's PostgreSQL)
-if not os.getenv('DATABASE_URL'):
-    try:
-        import pymysql
-        pymysql.install_as_MySQLdb()
-    except ImportError:
-        pass
-
 load_dotenv()
 
 
@@ -19,18 +11,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me')
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Handle Railway's dynamic domain and Render's domain
-railway_domain = os.getenv('RAILWAY_STATIC_URL', '').replace('https://', '').replace('http://', '')
-render_domain = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').replace('https://', '').replace('http://', '')
-allowed_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-if railway_domain:
-    allowed_hosts.append(railway_domain)
-if render_domain:
-    allowed_hosts.append(render_domain)
-# For Render, always add the onrender.com domain
-if os.getenv('RENDER'):
-    allowed_hosts.extend(['banking-backend-5ymw.onrender.com', '*.onrender.com'])
-ALLOWED_HOSTS = list(set(allowed_hosts))  # Remove duplicates
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -53,6 +34,7 @@ LOCAL_APPS = [
     'apps.api',
     'apps.transactions',
     'apps.audit',
+    'apps.security',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -64,6 +46,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.security.middleware.SecurityProtectionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -88,30 +71,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database configuration - supports both Railway (PostgreSQL) and local MySQL
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-if DATABASE_URL:
-    # Railway provides DATABASE_URL for PostgreSQL
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    # Local MySQL configuration (XAMPP)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('DB_NAME', 'banking_system'),
-            'USER': os.getenv('DB_USER', 'root'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '3308'),
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
-    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -148,14 +113,10 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'https://zero-trust-banking-system.vercel.app,http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000,https://*.vercel.app'
+    'http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000'
 ).split(',')
 
-# CSRF trusted origins for production
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    'CSRF_TRUSTED_ORIGINS',
-    'https://zero-trust-banking-system.vercel.app,https://*.vercel.app'
-).split(',')
+CORS_ALLOW_CREDENTIALS = True
 
 # JWT Settings
 from datetime import timedelta
@@ -173,4 +134,53 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+# ===========================================================
+# Zero Trust Security Configuration
+# ===========================================================
+
+# Email backend (console for dev, switch to SMTP in production)
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'security@zerotrust-bank.com')
+
+# Risk engine thresholds (configurable via .env)
+RISK_THRESHOLD_MEDIUM = int(os.getenv('RISK_THRESHOLD_MEDIUM', '30'))
+RISK_THRESHOLD_HIGH = int(os.getenv('RISK_THRESHOLD_HIGH', '70'))
+IMPOSSIBLE_TRAVEL_SPEED_KMH = float(os.getenv('IMPOSSIBLE_TRAVEL_SPEED_KMH', '800'))
+FAILED_LOGIN_THRESHOLD = int(os.getenv('FAILED_LOGIN_THRESHOLD', '3'))
+FAILED_LOGIN_WINDOW_MINUTES = int(os.getenv('FAILED_LOGIN_WINDOW_MINUTES', '10'))
+LARGE_TRANSACTION_AMOUNT = float(os.getenv('LARGE_TRANSACTION_AMOUNT', '5000'))
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'apps.security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }

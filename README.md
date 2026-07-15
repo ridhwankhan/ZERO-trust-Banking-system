@@ -648,6 +648,24 @@ The application has three distinct User Roles. Depending on the account you log 
 2. You will see a list of Sent and Received transactions. 
 3. The backend automatically decrypts the RSA/ECC payloads using your stored keys before serving them to your frontend, proving the end-to-end encryption works seamlessly.
 
+#### Feature 5: Zero-Trust Security Dashboard & WebRTC Biometrics
+1. **Enroll Face Biometrics (User):**
+   * Log in to a regular user account.
+   * Go to the **Security Center** (from the dashboard).
+   * Click the **Devices** tab and click **"Enroll Face on Current Device"**.
+   * Grant camera permissions, position your face in the target frame, and run the biometric scan.
+2. **Face Biometric Login (User):**
+   * Log out, then type your email and password on the login screen.
+   * Click **"Log in with Face Biometric"**. The WebRTC camera will scan your face, calculate your local pixel matrix hash, and bypass OTP verification dynamically by reducing the risk score.
+3. **Audit Alerts (User):**
+   * If you see any suspicious login in your history, click **"Not me"** next to it. It immediately logs a high-severity `SecurityAlert` in the system database.
+4. **Security Command Center (Admin):**
+   * Log into the admin account (`admin@example.com` / `Admin@12345`).
+   * Navigate to `/admin/security-dashboard` or click **"Security Dashboard"**.
+   * Under the **Threats** tab, view active security alerts and resolve them.
+   * Under **Scanner**, run the **OWASP Security Scanner** to test for injection, weak keys, and CSRF configs.
+   * Under **Ledger Integrity**, run the cryptographic checker to scan for database tampering.
+
 ---
 
 **Built with ❤️ for secure, private banking in the digital age**

@@ -11,12 +11,36 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Add auth token to requests
+// Generate a simple device fingerprint from browser properties
+function getDeviceFingerprint(): string {
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 'unknown',
+    (navigator as any).deviceMemory || 'unknown',
+  ]
+  // Simple hash
+  let hash = 0
+  const str = components.join('|')
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return 'fp_' + Math.abs(hash).toString(36)
+}
+
+// Add auth token and device fingerprint to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Attach device fingerprint for zero-trust risk evaluation
+  config.headers['X-Device-Fingerprint'] = getDeviceFingerprint()
   return config
 })
 
@@ -92,7 +116,7 @@ export interface Ledger {
 }
 
 export interface CreateTransactionData {
-  receiver_id: number
+  receiver_email: string
   amount: string
   privacy_level: 'standard' | 'private_metadata' | 'high_privacy'
   description?: string

@@ -62,7 +62,7 @@ export default function SendMoney() {
       // In a real app, we'd look up receiver_id by email
       // For now, using a placeholder
       await createTransaction({
-        receiver_id: 1, // This should be looked up from email
+        receiver_email: formData.receiver_email,
         amount: formData.amount,
         privacy_level: formData.privacy_level as any,
         description: formData.description,

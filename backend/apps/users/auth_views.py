@@ -95,27 +95,152 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        # Get the validated data which includes private keys
+        # Extract device/network info before validation (needed for fail logging too)
+        ip_address = (
+            request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+            or request.META.get('REMOTE_ADDR')
+        )
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        device_fingerprint = request.META.get('HTTP_X_DEVICE_FINGERPRINT', '')
+        face_hash = request.META.get('HTTP_X_FACE_SIGNATURE', '')
+
+        # Lazy import to keep security module decoupled
+        from apps.security.risk_engine import BehavioralRiskEngine, parse_user_agent, get_ip_location
+        from apps.security.models import LoginEvent, TrustedDevice
+        from apps.security.adaptive_auth import (
+            get_required_verification, notify_new_device_login,
+            notify_high_risk_login,
+        )
+
+        browser, os_name = parse_user_agent(user_agent)
+
+        # --- Attempt authentication ---
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+        except Exception as auth_exc:
+            # Record failed login event
+            email_attempted = request.data.get('email', '')
+            user_obj = None
+            try:
+                user_obj = User.objects.get(email=email_attempted)
+            except User.DoesNotExist:
+                pass
+            location = get_ip_location(ip_address)
+            LoginEvent.objects.create(
+                user=user_obj,
+                email_entered=email_attempted,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                browser=browser,
+                os=os_name,
+                device_fingerprint=device_fingerprint,
+                country=location['country'],
+                city=location['city'],
+                latitude=location['lat'],
+                longitude=location['lon'],
+                is_successful=False,
+            )
+            raise auth_exc  # Re-raise so DRF returns normal error response
+
+        # --- Authentication succeeded ---
         data = serializer.validated_data
-        
+
         # Extract and store private keys in memory (remove from response)
         rsa_private_key = data.pop('_rsa_private_key', None)
         ecc_private_key = data.pop('_ecc_private_key', None)
         user_id = data.get('user', {}).get('id')
-        
+
         if user_id and (rsa_private_key or ecc_private_key):
             store_private_keys_in_session(user_id, rsa_private_key, ecc_private_key)
-        
+
+        # Resolve logged-in user object
+        user_obj = User.objects.get(id=user_id) if user_id else None
+
+        # --- Risk evaluation ---
+        face_verified = bool(face_hash)
+        risk_result = BehavioralRiskEngine.calculate_login_risk(
+            user=user_obj,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            browser=browser,
+            os_name=os_name,
+            device_fingerprint=device_fingerprint,
+            face_verified=face_verified,
+        )
+        location = risk_result['location']
+
+        # Record successful login event
+        LoginEvent.objects.create(
+            user=user_obj,
+            email_entered=request.data.get('email', ''),
+            ip_address=ip_address,
+            user_agent=user_agent,
+            browser=browser,
+            os=os_name,
+            device_fingerprint=device_fingerprint,
+            face_biometric_verified=face_verified,
+            face_signature_hash=face_hash or None,
+            country=location['country'],
+            city=location['city'],
+            latitude=location['lat'],
+            longitude=location['lon'],
+            risk_score=risk_result['score'],
+            risk_level=risk_result['level'],
+            risk_reasons=risk_result['reasons'],
+            impossible_travel_detected=risk_result['impossible_travel'],
+            is_successful=True,
+        )
+
+        # Register / update trusted device
+        if user_obj and device_fingerprint:
+            device, created = TrustedDevice.objects.get_or_create(
+                user=user_obj,
+                device_fingerprint=device_fingerprint,
+                defaults={
+                    'browser': browser,
+                    'os': os_name,
+                    'name': f"{browser} on {os_name}",
+                    'has_face_biometric': face_verified,
+                    'face_signature_hash': face_hash or None,
+                },
+            )
+            if not created:
+                device.browser = browser
+                device.os = os_name
+                device.save()
+            else:
+                # New device → email notification
+                notify_new_device_login(user_obj, {
+                    'browser': browser,
+                    'os': os_name,
+                    'ip': ip_address,
+                    'city': location['city'],
+                    'country': location['country'],
+                })
+
+        # High-risk → email notification
+        if risk_result['level'] == 'high' and user_obj:
+            notify_high_risk_login(
+                user_obj, risk_result['score'], risk_result['reasons'])
+
+        # Adaptive auth challenge info
+        verification = get_required_verification(risk_result['level'], 'login')
+
         # Reformat response to match registration format
         response_data = {
             'tokens': {
                 'access': data.pop('access'),
                 'refresh': data.pop('refresh')
             },
-            'user': data.get('user', {})
+            'user': data.get('user', {}),
+            'security': {
+                'risk_score': risk_result['score'],
+                'risk_level': risk_result['level'],
+                'risk_reasons': risk_result['reasons'],
+                'impossible_travel': risk_result['impossible_travel'],
+                'verification': verification,
+            },
         }
         return Response(response_data, status=status.HTTP_200_OK)
 

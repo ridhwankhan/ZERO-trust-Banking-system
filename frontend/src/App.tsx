@@ -15,6 +15,8 @@ import AdminLogin from './pages/AdminLogin'
 import AuthorityLogin from './pages/AuthorityLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import AuthorityDashboard from './pages/AuthorityDashboard'
+import SecurityCenter from './pages/SecurityCenter'
+import AdminSecurityDashboard from './pages/AdminSecurityDashboard'
 import './App.css'
 
 // Simple auth check
@@ -156,6 +158,14 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           } 
         />
+        <Route
+          path="/security-center"
+          element={
+            <ProtectedRoute>
+              <Page><SecurityCenter /></Page>
+            </ProtectedRoute>
+          }
+        />
         
         {/* Admin Protected Routes */}
         <Route 
@@ -165,6 +175,14 @@ function AnimatedRoutes() {
               <Page><AdminDashboard /></Page>
             </AdminRoute>
           } 
+        />
+        <Route
+          path="/admin/security-dashboard"
+          element={
+            <AdminRoute>
+              <Page><AdminSecurityDashboard /></Page>
+            </AdminRoute>
+          }
         />
         
         {/* Authority Protected Routes */}

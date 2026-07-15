@@ -40,4 +40,5 @@ urlpatterns = [
     
     path('transactions/', include('apps.transactions.urls')),
     path('audit/', include('apps.audit.urls')),
+    path('security/', include('apps.security.urls')),
 ]

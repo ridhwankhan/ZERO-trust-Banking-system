@@ -217,24 +217,34 @@ class TransferCreateView(APIView):
             )
         
         try:
+            receiver_email = request.data.get('receiver_email')
             receiver_id = request.data.get('receiver_id')
-            amount = Decimal(request.data.get('amount'))
-            privacy_level = request.data.get('privacy_level', Transaction.STANDARD)
             
-            # Validate
-            if amount <= 0:
+            # Support both receiver_email and receiver_id for backward compatibility
+            if receiver_email:
+                try:
+                    receiver = User.objects.get(email=receiver_email)
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'Receiver not found'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            elif receiver_id:
+                try:
+                    receiver = User.objects.get(id=receiver_id)
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'Receiver not found'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            else:
                 return Response(
-                    {'error': 'Amount must be positive'},
+                    {'error': 'receiver_email or receiver_id is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            try:
-                receiver = User.objects.get(id=receiver_id)
-            except User.DoesNotExist:
-                return Response(
-                    {'error': 'Receiver not found'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            amount = Decimal(request.data.get('amount'))
+            privacy_level = request.data.get('privacy_level', Transaction.STANDARD)
             
             if sender.id == receiver.id:
                 return Response(

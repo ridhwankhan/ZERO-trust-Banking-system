@@ -49,6 +49,11 @@ dist-ssr/
 *.local
 node-v20.11.1-win-x64/
 node.zip
+.gemini/
+error_output.html
+*.log
+Launcher.py
+RunProject.bat
 .next/
 out/
 

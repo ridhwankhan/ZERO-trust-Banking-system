@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Zero Trust Banking System Overall Crypto Workflow</title>
+  <desc id="desc">Overall workflow diagram showing frontend routes, authentication, cryptographic layers, transaction privacy levels, integrity checks, ledgers, database storage, and admin authority flows.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7faf8; }
+      .title { font: 700 42px Arial, sans-serif; fill: #13231c; }
+      .subtitle { font: 400 20px Arial, sans-serif; fill: #53645b; }
+      .lane-title { font: 700 22px Arial, sans-serif; fill: #ffffff; }
+      .group-title { font: 700 19px Arial, sans-serif; fill: #14221b; }
+      .label { font: 700 17px Arial, sans-serif; fill: #17231d; }
+      .small { font: 400 15px Arial, sans-serif; fill: #33443b; }
+      .tiny { font: 400 13px Arial, sans-serif; fill: #4a5a52; }
+      .note { font: 700 14px Arial, sans-serif; fill: #31463b; }
+      .lane { rx: 0; }
+      .card { fill: #ffffff; stroke-width: 2; rx: 8; }
+      .client { stroke: #2f7d5d; }
+      .api { stroke: #2c6f9e; }
+      .crypto { stroke: #775aa6; }
+      .data { stroke: #b4682d; }
+      .client-fill { fill: #e7f6ee; }
+      .api-fill { fill: #e6f1f8; }
+      .crypto-fill { fill: #eee9f7; }
+      .data-fill { fill: #f8eee5; }
+      .success { fill: #dff3e7; stroke: #268052; }
+      .warning { fill: #fff3cf; stroke: #c28b16; }
+      .danger { fill: #fde7e4; stroke: #c85545; }
+      .line { fill: none; stroke: #5b6b62; stroke-width: 2.5; marker-end: url(#arrow); }
+      .line-crypto { fill: none; stroke: #775aa6; stroke-width: 3; marker-end: url(#arrow-purple); }
+      .line-data { fill: none; stroke: #b4682d; stroke-width: 3; marker-end: url(#arrow-brown); }
+      .dash { stroke-dasharray: 8 7; }
+      .chip { fill: #13231c; rx: 16; }
+      .chip-text { font: 700 13px Arial, sans-serif; fill: #ffffff; }
+    </style>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 11 5.5 L 0 11 z" fill="#5b6b62"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 11 5.5 L 0 11 z" fill="#775aa6"/>
+    </marker>
+    <marker id="arrow-brown" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 11 5.5 L 0 11 z" fill="#b4682d"/>
+    </marker>
+    <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#123024" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect class="bg" width="1800" height="1200"/>
+  <text class="title" x="70" y="72">Zero Trust Banking System: Overall Crypto Workflow</text>
+  <text class="subtitle" x="72" y="106">React frontend -> Django REST API -> authentication and crypto layers -> banking ledger, audit, and encrypted storage</text>
+
+  <rect class="lane" x="70" y="145" width="360" height="895" fill="#2f7d5d"/>
+  <rect class="lane" x="455" y="145" width="360" height="895" fill="#2c6f9e"/>
+  <rect class="lane" x="840" y="145" width="410" height="895" fill="#775aa6"/>
+  <rect class="lane" x="1275" y="145" width="455" height="895" fill="#b4682d"/>
+
+  <text class="lane-title" x="102" y="181">Frontend Layer</text>
+  <text class="lane-title" x="487" y="181">API and Access Layer</text>
+  <text class="lane-title" x="872" y="181">Crypto Layer</text>
+  <text class="lane-title" x="1307" y="181">Data, Integrity, Oversight</text>
+
+  <g filter="url(#soft-shadow)">
+    <rect class="card client client-fill" x="100" y="225" width="300" height="92"/>
+    <text class="label" x="125" y="260">User Entry Points</text>
+    <text class="small" x="125" y="286">Home, Login, Register</text>
+    <text class="small" x="125" y="307">Admin and Authority Login</text>
+
+    <rect class="card client client-fill" x="100" y="365" width="300" height="134"/>
+    <text class="label" x="125" y="399">Authenticated App</text>
+    <text class="small" x="125" y="426">Dashboard and profile</text>
+    <text class="small" x="125" y="450">Deposit and transfer</text>
+    <text class="small" x="125" y="474">History and encrypted posts</text>
+
+    <rect class="card client client-fill" x="100" y="548" width="300" height="128"/>
+    <text class="label" x="125" y="582">Client Session State</text>
+    <text class="small" x="125" y="609">Access token</text>
+    <text class="small" x="125" y="633">Refresh token</text>
+    <text class="small" x="125" y="657">Role based route visibility</text>
+
+    <rect class="card client client-fill" x="100" y="724" width="300" height="122"/>
+    <text class="label" x="125" y="758">User Chooses Workflow</text>
+    <text class="small" x="125" y="785">Profile update</text>
+    <text class="small" x="125" y="809">Money transfer privacy level</text>
+    <text class="small" x="125" y="833">Post create/read/edit/delete</text>
+
+    <rect class="card api api-fill" x="485" y="225" width="300" height="126"/>
+    <text class="label" x="510" y="259">Register API</text>
+    <text class="small" x="510" y="286">Validate password and role</text>
+    <text class="small" x="510" y="310">Create default KYC request</text>
+    <text class="small" x="510" y="334">Return JWT tokens</text>
+
+    <rect class="card api api-fill" x="485" y="390" width="300" height="158"/>
+    <text class="label" x="510" y="424">Login API</text>
+    <text class="small" x="510" y="451">Check credentials</text>
+    <text class="small" x="510" y="475">Decrypt protected private keys</text>
+    <text class="small" x="510" y="499">Store keys only in memory</text>
+    <text class="small" x="510" y="523">Issue access and refresh JWT</text>
+
+    <rect class="card api api-fill" x="485" y="586" width="300" height="116"/>
+    <text class="label" x="510" y="620">2FA Layer</text>
+    <text class="small" x="510" y="647">TOTP setup and verify</text>
+    <text class="small" x="510" y="671">Backup code fallback</text>
+
+    <rect class="card api api-fill" x="485" y="742" width="300" height="134"/>
+    <text class="label" x="510" y="776">Protected REST APIs</text>
+    <text class="small" x="510" y="803">JWTAuthentication</text>
+    <text class="small" x="510" y="827">Role permissions</text>
+    <text class="small" x="510" y="851">User/Admin/Authority paths</text>
+
+    <rect class="card crypto crypto-fill" x="875" y="225" width="340" height="150"/>
+    <text class="label" x="902" y="259">Key Generation on Register</text>
+    <text class="small" x="902" y="286">RSA key pair for profile fields</text>
+    <text class="small" x="902" y="310">ECC key pair for private transfers</text>
+    <text class="small" x="902" y="334">Private keys encrypted with password</text>
+    <text class="small" x="902" y="358">Public keys stored for encryption</text>
+
+    <rect class="card crypto crypto-fill" x="875" y="418" width="340" height="140"/>
+    <text class="label" x="902" y="452">Login Crypto Path</text>
+    <text class="small" x="902" y="479">Password unlocks RSA private key</text>
+    <text class="small" x="902" y="503">Password unlocks ECC private key</text>
+    <text class="small" x="902" y="527">InMemoryKeyCache holds decrypted keys</text>
+
+    <rect class="card crypto crypto-fill" x="875" y="602" width="340" height="176"/>
+    <text class="label" x="902" y="636">Transaction Privacy Engine</text>
+    <text class="small" x="902" y="663">Standard: JSON payload stored</text>
+    <text class="small" x="902" y="687">Private metadata: ECC encrypt details</text>
+    <text class="small" x="902" y="711">High privacy: ECC encrypt full payload</text>
+    <text class="small" x="902" y="735">Receiver private key decrypts history</text>
+    <text class="small" x="902" y="759">Amount remains visible for ledger math</text>
+
+    <rect class="card crypto crypto-fill" x="875" y="820" width="340" height="118"/>
+    <text class="label" x="902" y="854">Profile and Post Encryption</text>
+    <text class="small" x="902" y="881">Email, username, contact encrypted</text>
+    <text class="small" x="902" y="905">Post content stored encrypted/decrypted</text>
+    <text class="small" x="902" y="929">Keys cleared on logout</text>
+
+    <rect class="card data data-fill" x="1310" y="225" width="380" height="128"/>
+    <text class="label" x="1338" y="259">User and KYC Storage</text>
+    <text class="small" x="1338" y="286">User table keeps public keys</text>
+    <text class="small" x="1338" y="310">Encrypted private keys at rest</text>
+    <text class="small" x="1338" y="334">Pending KYC request created</text>
+
+    <rect class="card data data-fill" x="1310" y="398" width="380" height="158"/>
+    <text class="label" x="1338" y="432">JWT and Role Enforcement</text>
+    <text class="small" x="1338" y="459">User: banking workflows</text>
+    <text class="small" x="1338" y="483">Admin: users and balances</text>
+    <text class="small" x="1338" y="507">Authority: KYC and compliance</text>
+    <text class="small" x="1338" y="531">Logout blacklists refresh token</text>
+
+    <rect class="card data data-fill" x="1310" y="602" width="380" height="160"/>
+    <text class="label" x="1338" y="636">Transaction Integrity</text>
+    <text class="small" x="1338" y="663">HMAC-SHA256 signature over record</text>
+    <text class="small" x="1338" y="687">SHA-256 hash chain fields</text>
+    <text class="small" x="1338" y="711">Atomic ledger debit and credit</text>
+    <text class="small" x="1338" y="735">Tamper checks before trusted display</text>
+
+    <rect class="card data data-fill" x="1310" y="810" width="380" height="128"/>
+    <text class="label" x="1338" y="844">Audit and Oversight</text>
+    <text class="small" x="1338" y="871">ActionLog records privileged actions</text>
+    <text class="small" x="1338" y="895">Authority approves/rejects KYC</text>
+    <text class="small" x="1338" y="919">Admins manage users and balances</text>
+  </g>
+
+  <path class="line" d="M400 271 C430 271 452 271 485 271"/>
+  <path class="line" d="M400 432 C430 432 452 456 485 456"/>
+  <path class="line" d="M400 612 C430 612 452 643 485 643"/>
+  <path class="line" d="M400 786 C430 786 452 808 485 808"/>
+
+  <path class="line-crypto" d="M785 288 C820 288 840 292 875 292"/>
+  <path class="line-crypto" d="M785 470 C820 470 840 487 875 487"/>
+  <path class="line-crypto" d="M785 808 C825 808 840 693 875 693"/>
+  <path class="line-crypto" d="M785 808 C825 808 840 879 875 879"/>
+
+  <path class="line-data" d="M1215 300 C1250 300 1270 289 1310 289"/>
+  <path class="line-data" d="M1215 488 C1250 488 1270 477 1310 477"/>
+  <path class="line-data" d="M1215 694 C1250 694 1270 682 1310 682"/>
+  <path class="line-data" d="M1215 879 C1250 879 1270 872 1310 872"/>
+
+  <path class="line dash" d="M1500 762 C1500 790 1500 802 1500 810"/>
+  <path class="line dash" d="M635 702 C635 724 635 728 635 742"/>
+  <path class="line dash" d="M1045 558 C1045 580 1045 587 1045 602"/>
+
+  <g>
+    <rect class="chip" x="100" y="986" width="214" height="34"/>
+    <text class="chip-text" x="118" y="1008">CRYPTO LAYERS SUMMARY</text>
+    <text class="tiny" x="340" y="1008">RSA encrypts identity/profile fields. ECC protects private transfer payloads. Password-derived encryption protects private keys at rest.</text>
+    <text class="tiny" x="340" y="1030">JWT authenticates API calls. TOTP adds second-factor login verification. HMAC and hash-chain fields support tamper detection.</text>
+  </g>
+
+  <g>
+    <rect class="card success" x="100" y="1080" width="370" height="62"/>
+    <text class="note" x="122" y="1111">Login flow:</text>
+    <text class="tiny" x="202" y="1111">Credentials -> private-key decrypt -> memory cache -> JWT -> optional TOTP -> protected routes</text>
+
+    <rect class="card warning" x="505" y="1080" width="540" height="62"/>
+    <text class="note" x="527" y="1111">Transfer flow:</text>
+    <text class="tiny" x="621" y="1111">Select privacy -> encrypt payload if needed -> HMAC sign -> ledger debit/credit -> store record</text>
+
+    <rect class="card danger" x="1080" y="1080" width="610" height="62"/>
+    <text class="note" x="1102" y="1111">Oversight flow:</text>
+    <text class="tiny" x="1200" y="1111">Admin/Authority roles use JWT permissions, KYC actions, audit logs, and integrity checks</text>
+  </g>
+</svg>

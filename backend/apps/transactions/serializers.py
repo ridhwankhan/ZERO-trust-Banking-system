@@ -21,7 +21,7 @@ from rsa import decrypt as rsa_decrypt
 class TransactionCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating transactions with privacy handling."""
     
-    receiver_id = serializers.IntegerField(write_only=True)
+    receiver_email = serializers.EmailField(write_only=True)
     description = serializers.CharField(write_only=True, required=False, allow_blank=True)
     notes = serializers.CharField(write_only=True, required=False, allow_blank=True)
     category = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -29,7 +29,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = [
-            'receiver_id', 'amount', 'privacy_level',
+            'receiver_email', 'amount', 'privacy_level',
             'description', 'notes', 'category'
         ]
     
@@ -51,12 +51,13 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             })
         
         # Validate receiver exists
-        receiver_id = attrs.get('receiver_id')
+        receiver_email = attrs.get('receiver_email')
         try:
-            User.objects.get(id=receiver_id)
+            receiver = User.objects.get(email=receiver_email)
+            attrs['receiver'] = receiver  # Store the receiver instance
         except User.DoesNotExist:
             raise serializers.ValidationError({
-                'receiver_id': 'Receiver not found'
+                'receiver_email': 'Receiver not found'
             })
         
         # Validate amount
@@ -66,9 +67,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             })
         
         # Validate sender != receiver
-        if sender.id == receiver_id:
+        if sender.email == receiver_email:
             raise serializers.ValidationError({
-                'receiver_id': 'Cannot send to yourself'
+                'receiver_email': 'Cannot send to yourself'
             })
         
         return attrs
@@ -76,8 +77,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create transaction with appropriate privacy handling."""
         sender = self.context['request'].user
-        receiver_id = validated_data.pop('receiver_id')
-        receiver = User.objects.get(id=receiver_id)
+        receiver = validated_data.pop('receiver')  # Get the receiver instance
+        receiver_email = validated_data.pop('receiver_email')  # Remove from data
         
         # Extract metadata fields
         description = validated_data.pop('description', '')

@@ -271,7 +271,44 @@ class Transaction(models.Model):
     
     def save(self, *args, **kwargs):
         self.clean()
+
+        # --- Append-only ledger: block hash tampering on existing records ---
+        if self.pk:
+            try:
+                existing = Transaction.objects.get(pk=self.pk)
+                if existing.transaction_hash and self.transaction_hash != existing.transaction_hash:
+                    raise ValidationError(
+                        "Transaction hash cannot be modified after creation (append-only ledger)."
+                    )
+            except Transaction.DoesNotExist:
+                pass
+
+        # --- Auto-link hash chain on new transactions ---
+        if not self.pk and not self.transaction_hash:
+            import hashlib
+            from django.utils import timezone as _tz
+
+            last_tx = (
+                Transaction.objects.all().order_by('-id').first()
+            )
+            previous_hash = last_tx.transaction_hash if last_tx else 'GENESIS'
+            self.previous_hash = previous_hash
+
+            sender_id = str(self.sender_id) if self.sender_id else '0'
+            receiver_id = str(self.receiver_id)
+            amount = str(self.amount)
+            payload = self.encrypted_payload or ''
+
+            raw = f"{sender_id}_{receiver_id}_{amount}_{payload}_{previous_hash}"
+            self.transaction_hash = hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Block deletion to enforce append-only ledger integrity."""
+        raise ValidationError(
+            "Transactions cannot be deleted. The ledger is append-only."
+        )
 
 
 class TransactionMetadata(models.Model):
