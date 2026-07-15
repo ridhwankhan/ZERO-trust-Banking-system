@@ -76,7 +76,7 @@ export default function Dashboard() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="balance-amount"
+            className="balance-amount sensitive-data"
           >
             ${parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </motion.div>
@@ -100,7 +100,7 @@ export default function Dashboard() {
             }}
           >
             <CreditCard size={18} color="#94a3b8" />
-            <span style={{ fontFamily: 'monospace', fontSize: '16px', letterSpacing: '2px', color: '#e2e8f0' }}>
+            <span className="sensitive-data" style={{ fontFamily: 'monospace', fontSize: '16px', letterSpacing: '2px', color: '#e2e8f0' }}>
               {user.card_number ? user.card_number.match(/.{1,4}/g)?.join(' ') : '**** **** **** ****'}
             </span>
             <button 

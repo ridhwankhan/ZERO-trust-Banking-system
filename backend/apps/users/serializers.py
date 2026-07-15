@@ -96,7 +96,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'email', 'username', 'role', 'is_active', 'created_at', 'crypto_status', 'card_number']
+        fields = ['id', 'email', 'username', 'role', 'is_active', 'transaction_frozen', 'created_at', 'crypto_status', 'card_number']
         read_only_fields = ['id', 'created_at', 'card_number']
     
     def get_crypto_status(self, obj):

@@ -11,7 +11,8 @@ import os
 import json
 import hashlib
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
@@ -51,7 +52,13 @@ class DepositInitiateView(APIView):
         user = request.user
         
         try:
-            amount = Decimal(request.data.get('amount', 0))
+            if getattr(request.user, 'transaction_frozen', False):
+            return Response(
+                {'error': 'Your transactions are currently frozen. Please unlock your account first.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        amount = Decimal(request.data.get('amount', 0))
             
             if amount <= 0:
                 return Response(
@@ -213,6 +220,21 @@ class TransferCreateView(APIView):
         if sender.role == User.ROLE_USER and not sender.is_verified:
             return Response(
                 {'error': 'Your account must be verified before transferring funds'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        if getattr(sender, 'transaction_frozen', False):
+            return Response(
+                {'error': 'Your transactions are currently frozen. Please unlock your account first.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Anti-Money Laundering (AML) Velocity Check
+        one_minute_ago = timezone.now() - timedelta(minutes=1)
+        recent_tx_count = Transaction.objects.filter(sender=sender, created_at__gte=one_minute_ago).count()
+        if recent_tx_count >= 3:
+            return Response(
+                {'error': 'AML Alert: Suspicious rapid transfers detected. Velocity limit exceeded.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         

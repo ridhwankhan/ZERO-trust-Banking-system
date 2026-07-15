@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User
@@ -21,5 +22,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def me(self, request):
-        serializer = self.get_serializer(request.user)
+        serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+
+class FreezeAccountView(APIView):
+    """Toggle transaction freeze status for the current user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        action = request.data.get('action')
+        
+        if action == 'freeze':
+            user.transaction_frozen = True
+            msg = 'Transactions frozen successfully'
+        elif action == 'unfreeze':
+            user.transaction_frozen = False
+            msg = 'Transactions unfrozen successfully'
+        else:
+            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user.save()
+        return Response({'status': 'success', 'message': msg, 'is_frozen': user.transaction_frozen})

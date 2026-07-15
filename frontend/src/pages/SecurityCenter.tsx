@@ -45,6 +45,7 @@ export default function SecurityCenter() {
   const [logins, setLogins] = useState<LoginEvent[]>([])
   const [devices, setDevices] = useState<TrustedDevice[]>([])
   const [alerts, setAlerts] = useState<SecurityAlertItem[]>([])
+  const [transactionFrozen, setTransactionFrozen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [showScanner, setShowScanner] = useState(false)
@@ -57,14 +58,16 @@ export default function SecurityCenter() {
     setLoading(true)
     setErrorMsg('')
     try {
-      const [loginsRes, devicesRes, alertsRes] = await Promise.all([
+      const [loginsRes, devicesRes, alertsRes, statusRes] = await Promise.all([
         api.get('/security/me/login-history/'),
         api.get('/security/me/devices/'),
         api.get('/security/me/alerts/'),
+        api.get('/security/me/status/')
       ])
       setLogins(loginsRes.data.results || loginsRes.data || [])
       setDevices(devicesRes.data.results || devicesRes.data || [])
       setAlerts(alertsRes.data.results || alertsRes.data || [])
+      setTransactionFrozen(statusRes.data.transaction_frozen || false)
     } catch (err: any) {
       console.error('Failed to load security data', err)
       setErrorMsg(err.message || 'Failed to connect to backend server.')
@@ -96,6 +99,18 @@ export default function SecurityCenter() {
     fetchData() // refresh to show enrolled status
   }
 
+  const handleToggleFreeze = async () => {
+    try {
+      const action = transactionFrozen ? 'unfreeze' : 'freeze'
+      const res = await api.post('/users/profile/freeze/', { action })
+      setTransactionFrozen(res.data.is_frozen)
+      alert(res.data.message)
+    } catch (err) {
+      console.error('Failed to toggle freeze:', err)
+      alert('Failed to update account freeze status.')
+    }
+  }
+
   const riskColor = (level: string) => {
     if (level === 'high') return '#ef4444'
     if (level === 'medium') return '#f59e0b'
@@ -116,6 +131,23 @@ export default function SecurityCenter() {
           </button>
           <h1><Shield size={28} /> Security Center</h1>
           <p className="sc-subtitle">Monitor your account security, devices, and login activity</p>
+        </div>
+
+        <div className="emergency-lockdown-card" style={{ margin: '0 32px 24px 32px', padding: '16px', background: transactionFrozen ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${transactionFrozen ? '#10b981' : '#ef4444'}`, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px', color: transactionFrozen ? '#10b981' : '#ef4444' }}>
+              <AlertTriangle size={20} /> Emergency Lockdown
+            </h3>
+            <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
+              {transactionFrozen ? 'Your account transactions are currently frozen.' : 'Instantly freeze your account to block all outgoing transactions.'}
+            </p>
+          </div>
+          <button 
+            onClick={handleToggleFreeze}
+            style={{ padding: '8px 16px', background: transactionFrozen ? '#10b981' : '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            {transactionFrozen ? 'Unfreeze Account' : 'Freeze Account'}
+          </button>
         </div>
 
         <div className="sc-tabs">

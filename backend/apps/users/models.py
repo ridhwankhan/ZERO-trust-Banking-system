@@ -34,6 +34,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False, help_text="User verified by Central Authority")
     kyc_status = models.CharField(max_length=10, choices=KYC_STATUS_CHOICES, default=KYC_PENDING)
     is_active = models.BooleanField(default=True, help_text="Account active status (Admin can suspend)")
+    transaction_frozen = models.BooleanField(default=False, help_text="User self-frozen transactions")
     
     # RSA Key storage
     contact_info = models.TextField(null=True, blank=True, help_text="User contact info (phone/address)")

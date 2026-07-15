@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from apps.users.views import UserViewSet
+from apps.users.views import UserViewSet, FreezeAccountView
 from apps.users.auth_views import (
     RegisterView,
     CustomTokenObtainPairView,
@@ -25,6 +25,7 @@ router.register(r'posts', PostViewSet, basename='posts')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('users/profile/freeze/', FreezeAccountView.as_view(), name='freeze_account'),
     path('auth/register/', RegisterView.as_view(), name='auth_register'),
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='auth_login'),
     path('auth/admin-login/', AdminLoginView.as_view(), name='auth_admin_login'),

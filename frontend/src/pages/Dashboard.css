@@ -444,3 +444,12 @@
     width: 100%;
   }
 }
+
+/* Privacy Mode (Anti-Screen Capture) */
+body.privacy-mode .sensitive-data {
+  filter: blur(8px);
+  user-select: none;
+  pointer-events: none;
+  transition: filter 0.3s ease;
+}
+
