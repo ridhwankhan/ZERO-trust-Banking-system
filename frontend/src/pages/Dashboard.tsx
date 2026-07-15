@@ -86,7 +86,10 @@ export default function Dashboard() {
       >
         <div className="header-left">
           <Shield size={32} className="header-logo" />
-          <h1>ZeroTrust Bank</h1>
+          <div className="header-brand">
+            <h1>Fiducia Bank</h1>
+            <span className="header-tagline">A Zero-Trust Financial Platform</span>
+          </div>
         </div>
         <div className="header-right">
           <div className="user-info">
@@ -149,6 +152,15 @@ export default function Dashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/security-center')}
+              className="action-btn security"
+            >
+              <Shield size={18} />
+              Security Center
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/history')}
               className="action-btn secondary"
             >
@@ -159,7 +171,7 @@ export default function Dashboard() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/profile')}
-              className="action-btn tertiary"
+              className="action-btn secondary"
             >
               <Settings size={18} />
               Profile
@@ -168,7 +180,7 @@ export default function Dashboard() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/posts')}
-              className="action-btn quaternary"
+              className="action-btn secondary"
             >
               <MessageSquare size={18} />
               Posts
