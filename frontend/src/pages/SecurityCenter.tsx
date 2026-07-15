@@ -46,6 +46,7 @@ export default function SecurityCenter() {
   const [devices, setDevices] = useState<TrustedDevice[]>([])
   const [alerts, setAlerts] = useState<SecurityAlertItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
   const [showScanner, setShowScanner] = useState(false)
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function SecurityCenter() {
 
   const fetchData = async () => {
     setLoading(true)
+    setErrorMsg('')
     try {
       const [loginsRes, devicesRes, alertsRes] = await Promise.all([
         api.get('/security/me/login-history/'),
@@ -63,8 +65,9 @@ export default function SecurityCenter() {
       setLogins(loginsRes.data.results || loginsRes.data || [])
       setDevices(devicesRes.data.results || devicesRes.data || [])
       setAlerts(alertsRes.data.results || alertsRes.data || [])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load security data', err)
+      setErrorMsg(err.message || 'Failed to connect to backend server.')
     } finally {
       setLoading(false)
     }
@@ -135,6 +138,8 @@ export default function SecurityCenter() {
 
         {loading ? (
           <div className="sc-loading">Loading security data...</div>
+        ) : errorMsg ? (
+          <div className="sc-loading" style={{ color: '#ef4444' }}>{errorMsg}</div>
         ) : (
           <div className="sc-content">
             {tab === 'logins' && (
