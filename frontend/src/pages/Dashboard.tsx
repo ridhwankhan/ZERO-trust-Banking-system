@@ -7,15 +7,13 @@ import {
   ArrowDownRight,
   History,
   Send,
-  LogOut,
   Shield,
-  User,
   CreditCard,
   Settings,
   MessageSquare,
   Wifi,
 } from 'lucide-react'
-import { getBalance, getTransactionHistory, logout } from '../services/api'
+import { getBalance, getTransactionHistory } from '../services/api'
 import './Dashboard.css'
 
 interface Transaction {
@@ -61,54 +59,10 @@ export default function Dashboard() {
     }
   }
 
-  const handleLogout = async () => {
-    const refresh = localStorage.getItem('refresh_token')
-    if (refresh) {
-      try {
-        await logout(refresh)
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    }
-    localStorage.clear()
-    navigate('/login')
-  }
-
   const isSent = (tx: Transaction) => tx.sender_email === user.email
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
-      <motion.header
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="dashboard-header"
-      >
-        <div className="header-left">
-          <Shield size={32} className="header-logo" />
-          <div className="header-brand">
-            <h1>Fiducia Bank</h1>
-            <span className="header-tagline">A Zero-Trust Financial Platform</span>
-          </div>
-        </div>
-        <div className="header-right">
-          <div className="user-info">
-            <User size={20} />
-            <span>{user.email}</span>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleLogout}
-            className="logout-btn"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }}
-          >
-            <LogOut size={18} />
-            <span>Sign Out</span>
-          </motion.button>
-        </div>
-      </motion.header>
-
       {/* Main Content */}
       <main className="dashboard-main">
         {/* Balance Card */}

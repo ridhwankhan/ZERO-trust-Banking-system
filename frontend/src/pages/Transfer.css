@@ -1,47 +1,28 @@
 .transfer-container {
-  min-height: calc(100vh - 70px);
+  min-height: calc(100vh - 80px);
   padding: 40px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
   overflow: hidden;
-}
-
-.transfer-container::before {
-  content: '';
-  position: absolute;
-  top: -20%;
-  left: -10%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.transfer-container::after {
-  content: '';
-  position: absolute;
-  bottom: -20%;
-  right: -10%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(15, 23, 42, 0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
+  background: #0b0f19;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+  color: #f1f5f9;
 }
 
 .transfer-card {
-  background: rgba(30, 41, 59, 0.7);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   width: 100%;
   max-width: 550px;
   padding: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   z-index: 10;
 }
 
@@ -54,13 +35,13 @@
   width: 80px;
   height: 80px;
   margin: 0 auto 20px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
+  background: rgba(251, 191, 36, 0.15);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #60a5fa;
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+  color: #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.1);
 }
 
 .transfer-header h1 {
@@ -213,8 +194,8 @@
 
 .transfer-btn {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: white;
+  background: #fbbf24;
+  color: #78350f;
   border: none;
   padding: 18px;
   border-radius: 12px;
@@ -225,14 +206,14 @@
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2);
   margin-top: 30px;
 }
 
 .transfer-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 12px 24px rgba(251, 191, 36, 0.3);
 }
 
 .transfer-btn:disabled {

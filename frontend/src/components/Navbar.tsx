@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Shield, Home, Activity, Lock, User as UserIcon } from 'lucide-react'
-import { api } from '../services/api'
+import { Bell, Shield, LogOut, User as UserIcon } from 'lucide-react'
+import { api, logout } from '../services/api'
 import './Navbar.css'
 
 export default function Navbar() {
@@ -10,22 +10,21 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showDropdown, setShowDropdown] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Don't show navbar on login/register pages
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/admin-login' || location.pathname === '/authority-login'
   const isAuthenticated = !!localStorage.getItem('access_token')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
     if (isAuthenticated && !isAuthPage) {
       fetchNotifications()
-      // Poll every 30 seconds for new notifications
       const interval = setInterval(fetchNotifications, 30000)
       return () => clearInterval(interval)
     }
   }, [isAuthenticated, isAuthPage, location.pathname])
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -51,7 +50,6 @@ export default function Navbar() {
       const url = id ? `/notifications/${id}/read/` : '/notifications/read/'
       await api.post(url)
       
-      // Optimistic UI update
       if (id) {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
         setUnreadCount(prev => Math.max(0, prev - 1))
@@ -64,28 +62,52 @@ export default function Navbar() {
     }
   }
 
+  const handleLogout = async () => {
+    const refresh = localStorage.getItem('refresh_token')
+    if (refresh) {
+      try {
+        await logout(refresh)
+      } catch (error) {
+        console.error('Logout error:', error)
+      }
+    }
+    localStorage.clear()
+    navigate('/login')
+  }
+
   if (isAuthPage || !isAuthenticated) return null
 
   return (
     <nav className="navbar-container">
-      <Link to="/dashboard" className="navbar-logo">
-        <Shield size={28} color="#60a5fa" />
-        <h2>Fiducia Bank</h2>
-      </Link>
-
-      <div className="navbar-links">
-        <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
-          <Home size={18} /> Dashboard
-        </Link>
-        <Link to="/transfer" className={`nav-link ${location.pathname === '/transfer' ? 'active' : ''}`}>
-          <Activity size={18} /> Transfer
-        </Link>
-        <Link to="/security-center" className={`nav-link ${location.pathname === '/security-center' ? 'active' : ''}`}>
-          <Lock size={18} /> Security
+      <div className="navbar-left">
+        <Link to="/dashboard" className="navbar-logo-group">
+          <Shield size={32} className="header-logo-icon" />
+          <div className="header-brand-info">
+            <h1>Fiducia Bank</h1>
+            <span className="header-tagline-text">A Zero-Trust Financial Platform</span>
+          </div>
         </Link>
       </div>
 
-      <div className="navbar-actions">
+      <div className="navbar-center-links">
+        <Link to="/dashboard" className={`center-nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+          Dashboard
+        </Link>
+        <Link to="/transfer" className={`center-nav-link ${location.pathname === '/transfer' ? 'active' : ''}`}>
+          Transfer
+        </Link>
+        <Link to="/security-center" className={`center-nav-link ${location.pathname === '/security-center' ? 'active' : ''}`}>
+          Security
+        </Link>
+        <Link to="/history" className={`center-nav-link ${location.pathname === '/history' ? 'active' : ''}`}>
+          History
+        </Link>
+        <Link to="/profile" className={`center-nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
+          Profile
+        </Link>
+      </div>
+
+      <div className="navbar-right">
         <div className="notification-container" ref={dropdownRef}>
           <button 
             className="bell-btn"
@@ -142,9 +164,20 @@ export default function Navbar() {
           </AnimatePresence>
         </div>
 
-        <Link to="/profile" className="profile-btn">
-          <UserIcon size={16} /> Profile
-        </Link>
+        <div className="nav-user-info">
+          <UserIcon size={18} />
+          <span>{user.email}</span>
+        </div>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleLogout}
+          className="nav-logout-btn"
+        >
+          <LogOut size={16} />
+          <span>Sign Out</span>
+        </motion.button>
       </div>
     </nav>
   )
