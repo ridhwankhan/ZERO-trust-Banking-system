@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import random
+import string
 
 
 class User(AbstractUser):
@@ -23,6 +25,7 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default=ROLE_USER)
+    card_number = models.CharField(max_length=16, unique=True, null=True, blank=True, help_text="Virtual 16-digit card number")
     
     # Account balance for banking
     balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
@@ -74,3 +77,31 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    def save(self, *args, **kwargs):
+        # Auto-generate 16-digit card number if not present
+        if not self.card_number:
+            while True:
+                new_card = ''.join(random.choices(string.digits, k=16))
+                if not User.objects.filter(card_number=new_card).exists():
+                    self.card_number = new_card
+                    break
+        super().save(*args, **kwargs)
+
+
+class Notification(models.Model):
+    """Stores in-app notifications for users, such as transfer receipts."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'notifications'
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user.email}: {self.title}"

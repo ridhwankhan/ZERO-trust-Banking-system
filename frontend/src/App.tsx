@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import SendMoney from './pages/SendMoney'
 import TransactionHistory from './pages/TransactionHistory'
 import Deposit from './pages/Deposit'
 import Transfer from './pages/Transfer'
@@ -55,6 +55,7 @@ const AuthorityRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <Router>
+      <Navbar />
       <AnimatedRoutes />
     </Router>
   )
@@ -106,7 +107,7 @@ function AnimatedRoutes() {
           path="/send" 
           element={
             <ProtectedRoute>
-              <Page><SendMoney /></Page>
+              <Page><Transfer /></Page>
             </ProtectedRoute>
           } 
         />

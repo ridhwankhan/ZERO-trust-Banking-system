@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Send, Users, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { Send, ArrowRight, CheckCircle, AlertCircle, CreditCard, Lock, Shield, EyeOff } from 'lucide-react'
 import { api } from '../services/api'
 import './Transfer.css'
 
 export default function Transfer() {
-  const [users, setUsers] = useState<any[]>([])
-  const [receiverId, setReceiverId] = useState('')
+  const [receiverInput, setReceiverInput] = useState('')
   const [amount, setAmount] = useState('')
   const [privacyLevel, setPrivacyLevel] = useState('standard')
   const [loading, setLoading] = useState(false)
@@ -16,39 +15,25 @@ export default function Transfer() {
   const [transactionDetails, setTransactionDetails] = useState<any>(null)
 
   useEffect(() => {
-    // Fetch user's balance
-    const fetchBalance = async () => {
-      try {
-        const response = await api.get('/transactions/balance/')
-        setUserBalance(response.data.balance)
-      } catch (err) {
-        console.error('Failed to fetch balance:', err)
-      }
-    }
-
-    // Fetch list of users for receiver selection
-    const fetchUsers = async () => {
-      try {
-        const response = await api.get('/users/')
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
-        const otherUsers = response.data.filter((u: any) => u.id !== currentUser.id)
-        setUsers(otherUsers)
-      } catch (err) {
-        console.error('Failed to fetch users:', err)
-      }
-    }
-
     fetchBalance()
-    fetchUsers()
   }, [])
+
+  const fetchBalance = async () => {
+    try {
+      const response = await api.get('/transactions/balance/')
+      setUserBalance(response.data.balance)
+    } catch (err) {
+      console.error('Failed to fetch balance:', err)
+    }
+  }
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    if (!receiverId) {
-      setError('Please select a receiver')
+    if (!receiverInput) {
+      setError('Please enter a valid Card Number or Email')
       setLoading(false)
       return
     }
@@ -65,13 +50,21 @@ export default function Transfer() {
       return
     }
 
-    try {
-      const response = await api.post('/transactions/transfer/create/', {
-        receiver_id: parseInt(receiverId),
-        amount: parseFloat(amount),
-        privacy_level: privacyLevel,
-      })
+    // Determine if input is email or card number
+    const isEmail = receiverInput.includes('@')
+    const payload: any = {
+      amount: parseFloat(amount),
+      privacy_level: privacyLevel,
+    }
 
+    if (isEmail) {
+      payload.receiver_email = receiverInput.trim()
+    } else {
+      payload.card_number = receiverInput.replace(/\s+/g, '').trim()
+    }
+
+    try {
+      const response = await api.post('/transactions/transfer/create/', payload)
       setTransactionDetails(response.data.transaction)
       setUserBalance(response.data.sender_new_balance)
       setSuccess(true)
@@ -87,101 +80,105 @@ export default function Transfer() {
   return (
     <div className="transfer-container">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         className="transfer-card"
       >
         <div className="transfer-header">
-          <Send size={40} className="transfer-icon" />
-          <h1>Transfer Funds</h1>
-          <p>Send encrypted funds to another secure account</p>
+          <div className="transfer-icon-wrapper">
+            <Send size={40} />
+          </div>
+          <h1>Secure Transfer</h1>
+          <p>Send encrypted funds to another account instantly</p>
         </div>
 
         {success && transactionDetails ? (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="success-section"
+            className="success-screen"
           >
-            <CheckCircle size={60} className="success-icon" />
+            <div className="success-icon-wrapper">
+              <CheckCircle size={50} />
+            </div>
             <h2>Transfer Successful!</h2>
-            <p>Your funds have been securely transferred</p>
+            <p>Your funds have been securely sent and verified.</p>
 
-            <div className="transfer-details">
-              <div className="detail-row">
-                <span>Transaction ID:</span>
+            <div className="receipt-card">
+              <div className="receipt-row">
+                <span>Transaction ID</span>
                 <strong>#{transactionDetails.id}</strong>
               </div>
-              <div className="detail-row">
-                <span>To:</span>
+              <div className="receipt-row">
+                <span>To</span>
                 <strong>{transactionDetails.receiver}</strong>
               </div>
-              <div className="detail-row">
-                <span>Amount:</span>
-                <strong className="amount-green">${transactionDetails.amount}</strong>
+              <div className="receipt-row">
+                <span>Amount</span>
+                <strong className="amount">${transactionDetails.amount}</strong>
               </div>
-              <div className="detail-row">
-                <span>Privacy Level:</span>
-                <strong>{transactionDetails.privacy_level}</strong>
+              <div className="receipt-row">
+                <span>Privacy Level</span>
+                <strong style={{ textTransform: 'capitalize' }}>
+                  {transactionDetails.privacy_level.replace('_', ' ')}
+                </strong>
               </div>
-              <div className="detail-row">
-                <span>Your New Balance:</span>
-                <strong className="amount-green">${userBalance}</strong>
-              </div>
-              <div className="detail-row">
-                <span>Transaction Hash:</span>
-                <code className="hash">{transactionDetails.transaction_hash.substring(0, 32)}...</code>
+              <div className="receipt-row">
+                <span>Transaction Hash</span>
+                <span className="hash-code">{transactionDetails.transaction_hash.substring(0, 16)}...</span>
               </div>
             </div>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="transfer-button"
+              className="transfer-btn"
               onClick={() => {
                 setSuccess(false)
                 setAmount('')
-                setReceiverId('')
+                setReceiverInput('')
               }}
             >
-              Make Another Transfer
+              Send Another Payment
             </motion.button>
           </motion.div>
         ) : (
-          <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onSubmit={handleTransfer}
-            className="transfer-form"
-          >
-            <div className="balance-section">
-              <p>Available Balance: <strong>${userBalance}</strong></p>
+          <form onSubmit={handleTransfer}>
+            <div className="balance-card">
+              <span className="balance-label">Available Balance</span>
+              <span className="balance-amount">${userBalance}</span>
             </div>
 
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="error-banner"
+              >
+                <AlertCircle size={20} />
+                <span>{error}</span>
+              </motion.div>
+            )}
+
             <div className="form-group">
-              <label>Send To</label>
-              <div className="select-wrapper">
-                <Users size={20} />
-                <select
-                  value={receiverId}
-                  onChange={(e) => setReceiverId(e.target.value)}
+              <label>Recipient Card Number or Email</label>
+              <div className="input-wrapper">
+                <CreditCard className="input-icon" size={20} />
+                <input
+                  type="text"
+                  placeholder="e.g. 4111222233334444 or user@domain.com"
+                  value={receiverInput}
+                  onChange={(e) => setReceiverInput(e.target.value)}
                   required
-                >
-                  <option value="">Select recipient...</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.email} ({user.username})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
             <div className="form-group">
-              <label>Amount</label>
-              <div className="amount-input">
-                <span className="currency">$</span>
+              <label>Amount (USD)</label>
+              <div className="input-wrapper amount-input">
+                <span className="input-icon">$</span>
                 <input
                   type="number"
                   placeholder="0.00"
@@ -195,8 +192,8 @@ export default function Transfer() {
             </div>
 
             <div className="form-group">
-              <label>Privacy Level</label>
-              <div className="privacy-options">
+              <label>Encryption & Privacy Level</label>
+              <div className="privacy-grid">
                 <label className="privacy-option">
                   <input
                     type="radio"
@@ -205,11 +202,12 @@ export default function Transfer() {
                     checked={privacyLevel === 'standard'}
                     onChange={(e) => setPrivacyLevel(e.target.value)}
                   />
-                  <span>
+                  <div className="privacy-content">
+                    <Shield size={24} />
                     <strong>Standard</strong>
-                    <small>Basic transaction</small>
-                  </span>
+                  </div>
                 </label>
+                
                 <label className="privacy-option">
                   <input
                     type="radio"
@@ -218,11 +216,12 @@ export default function Transfer() {
                     checked={privacyLevel === 'private_metadata'}
                     onChange={(e) => setPrivacyLevel(e.target.value)}
                   />
-                  <span>
-                    <strong>Private Metadata</strong>
-                    <small>Metadata encrypted</small>
-                  </span>
+                  <div className="privacy-content">
+                    <EyeOff size={24} />
+                    <strong>Private Data</strong>
+                  </div>
                 </label>
+
                 <label className="privacy-option">
                   <input
                     type="radio"
@@ -231,53 +230,26 @@ export default function Transfer() {
                     checked={privacyLevel === 'high_privacy'}
                     onChange={(e) => setPrivacyLevel(e.target.value)}
                   />
-                  <span>
-                    <strong>High Privacy</strong>
-                    <small>Full encryption</small>
-                  </span>
+                  <div className="privacy-content">
+                    <Lock size={24} />
+                    <strong>Max Privacy</strong>
+                  </div>
                 </label>
               </div>
             </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="error-message"
-              >
-                <AlertCircle size={20} />
-                {error}
-              </motion.div>
-            )}
 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="transfer-button"
-              disabled={loading || !receiverId || !amount}
+              className="transfer-btn"
+              disabled={loading || !receiverInput || !amount}
             >
-              {loading ? 'Processing Transfer...' : 'Send Funds'}
-              <ArrowRight size={20} />
+              {loading ? 'Processing Transfer...' : 'Send Funds Securely'}
+              {!loading && <ArrowRight size={20} />}
             </motion.button>
-          </motion.form>
+          </form>
         )}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="transfer-info"
-      >
-        <h3>Security Features</h3>
-        <ul>
-          <li><strong>RSA Encryption:</strong> Recipient's public key used for encryption</li>
-          <li><strong>ECC Signatures:</strong> Digital signatures for transaction authentication</li>
-          <li><strong>HMAC Verification:</strong> Integrity check to detect tampering</li>
-          <li><strong>Transaction Hash:</strong> Tamper-proof record in blockchain-style chain</li>
-          <li><strong>Privacy Levels:</strong> Choose your encryption level for each transfer</li>
-        </ul>
       </motion.div>
     </div>
   )

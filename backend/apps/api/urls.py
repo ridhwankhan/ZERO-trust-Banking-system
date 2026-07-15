@@ -17,6 +17,7 @@ from apps.users.two_factor_views import (
     TwoFactorStatusView
 )
 from apps.transactions.views import PostViewSet
+from apps.users.notification_views import NotificationListView, NotificationMarkReadView
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -31,6 +32,12 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view(), name='auth_logout'),
     path('auth/profile/', UserProfileView.as_view(), name='auth_profile'),
     path('auth/change-password/', ChangePasswordView.as_view(), name='auth_change_password'),
+    
+    # Notification endpoints
+    path('notifications/', NotificationListView.as_view(), name='notifications_list'),
+    path('notifications/read/', NotificationMarkReadView.as_view(), name='notifications_mark_all_read'),
+    path('notifications/<int:pk>/read/', NotificationMarkReadView.as_view(), name='notifications_mark_read'),
+
     
     # Two-factor authentication endpoints
     path('auth/2fa/setup/', TwoFactorSetupView.as_view(), name='2fa_setup'),

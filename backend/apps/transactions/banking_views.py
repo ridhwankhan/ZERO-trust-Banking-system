@@ -21,7 +21,7 @@ from django.db import transaction as db_transaction
 from django.db import models
 from django.utils import timezone
 
-from apps.users.models import User
+from apps.users.models import User, Notification
 from .models import Transaction, Ledger, KYCRequest, ActionLog
 from .serializers import (
     TransactionCreateSerializer,
@@ -219,9 +219,18 @@ class TransferCreateView(APIView):
         try:
             receiver_email = request.data.get('receiver_email')
             receiver_id = request.data.get('receiver_id')
+            card_number = request.data.get('card_number')
             
-            # Support both receiver_email and receiver_id for backward compatibility
-            if receiver_email:
+            # Support receiver_email, receiver_id, and card_number
+            if card_number:
+                try:
+                    receiver = User.objects.get(card_number=card_number)
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'Receiver card number not found'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            elif receiver_email:
                 try:
                     receiver = User.objects.get(email=receiver_email)
                 except User.DoesNotExist:
@@ -239,7 +248,7 @@ class TransferCreateView(APIView):
                     )
             else:
                 return Response(
-                    {'error': 'receiver_email or receiver_id is required'},
+                    {'error': 'receiver_email, receiver_id, or card_number is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -328,6 +337,13 @@ class TransferCreateView(APIView):
                 receiver.balance = receiver_ledger.balance
                 sender.save()
                 receiver.save()
+                
+                # Trigger Notification for Receiver
+                Notification.objects.create(
+                    user=receiver,
+                    title="Funds Received",
+                    message=f"You have securely received ${amount} from {sender.email}."
+                )
                 
                 return Response({
                     'status': 'success',
