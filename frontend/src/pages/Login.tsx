@@ -52,7 +52,9 @@ export default function Login() {
     } catch (err: any) {
       let errorMessage = 'Login failed. Please check your credentials.'
       if (!err.response) {
-        errorMessage = 'Unable to reach backend server. Make sure the Django API is running at http://localhost:8000'
+        errorMessage = 'Unable to reach backend server. Please check your internet connection or the server URL.'
+      } else if (err.response.status === 401) {
+        errorMessage = 'User not found or incorrect password. Please check your credentials or register.'
       } else if (err.response.data) {
         errorMessage = err.response.data.detail || err.response.data.message || err.response.data.error || errorMessage
       }

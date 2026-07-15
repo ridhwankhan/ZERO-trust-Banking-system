@@ -43,7 +43,7 @@ export default function Register() {
       let errorMessage = 'Registration failed. Please try again.'
       
       if (!err.response) {
-        errorMessage = 'Unable to reach backend server. Make sure the Django API is running at http://localhost:8000'
+        errorMessage = 'Unable to reach backend server. Please check your internet connection or the server URL.'
       } else if (err.response.data) {
         const data = err.response.data
         

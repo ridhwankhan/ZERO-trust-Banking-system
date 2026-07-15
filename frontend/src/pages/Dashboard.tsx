@@ -98,8 +98,10 @@ export default function Dashboard() {
             whileTap={{ scale: 0.95 }}
             onClick={handleLogout}
             className="logout-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }}
           >
             <LogOut size={18} />
+            <span>Sign Out</span>
           </motion.button>
         </div>
       </motion.header>
