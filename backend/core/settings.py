@@ -73,6 +73,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 import dj_database_url
 
+print("DEBUG: DATABASE_URL is set to:", repr(os.getenv('DATABASE_URL')))
+
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
