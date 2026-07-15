@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { Camera, X, Check, ShieldAlert } from 'lucide-react'
+import { useRef, useEffect, useState } from 'react'
+import { X, Check, ShieldAlert } from 'lucide-react'
 import './BiometricScannerModal.css'
 
 interface BiometricScannerModalProps {

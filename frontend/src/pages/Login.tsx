@@ -23,12 +23,7 @@ export default function Login() {
     if (e) e.preventDefault()
     setLoading(true)
     setError('')
-
     try {
-      const dataToSubmit = faceHash 
-        ? { ...formData, _face_signature: faceHash } // Not strictly standard but axios interceptor can't easily catch this, so we'll send it via custom header directly or in data. Wait, let's just pass it in headers during the api call.
-        : formData
-
       // For face login, we need a custom API call with the header
       let response;
       if (faceHash) {
