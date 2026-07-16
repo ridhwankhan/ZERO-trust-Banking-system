@@ -61,6 +61,12 @@ export default function Login() {
         setError(
           'Passkey login is not available on the server yet. Please sign in with your password, then enroll a passkey in Security Center.'
         )
+      } else if (err.response?.status === 500) {
+        setError(
+          err.response?.data?.detail ||
+            err.response?.data?.error ||
+            'Biometric login hit a server error. Use Security Center → Replace Passkey, then try again.'
+        )
       } else {
         const data = err.response?.data
         const msg =

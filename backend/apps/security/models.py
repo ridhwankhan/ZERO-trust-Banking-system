@@ -265,3 +265,31 @@ class WebAuthnCredential(models.Model):
 
     def __str__(self):
         return f"Passkey ({self.device_name}) for {self.user.email}"
+
+
+class WebAuthnChallenge(models.Model):
+    """
+    Persist WebAuthn challenges in the DB so multi-worker hosts (Render/Gunicorn)
+    can verify options generated on a different worker.
+    """
+    PURPOSE_REG = 'reg'
+    PURPOSE_AUTH = 'auth'
+    PURPOSE_CHOICES = [
+        (PURPOSE_REG, 'Registration'),
+        (PURPOSE_AUTH, 'Authentication'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='webauthn_challenges')
+    purpose = models.CharField(max_length=10, choices=PURPOSE_CHOICES)
+    challenge = models.TextField(help_text='Base64url-encoded challenge bytes')
+    rp_id = models.CharField(max_length=255)
+    origin = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'webauthn_challenges'
+        unique_together = [('user', 'purpose')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.purpose} challenge for {self.user_id}'

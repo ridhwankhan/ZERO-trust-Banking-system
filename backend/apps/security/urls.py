@@ -53,6 +53,8 @@ urlpatterns = [
 try:
     from . import webauthn_views
     urlpatterns += [
+        path('webauthn/status/', webauthn_views.WebAuthnStatusView.as_view(), name='webauthn-status'),
+        path('webauthn/clear/', webauthn_views.WebAuthnClearView.as_view(), name='webauthn-clear'),
         path('webauthn/register/generate-options/', webauthn_views.WebAuthnRegisterOptionsView.as_view(), name='webauthn-register-options'),
         path('webauthn/register/verify/', webauthn_views.WebAuthnRegisterVerifyView.as_view(), name='webauthn-register-verify'),
         path('webauthn/authenticate/generate-options/', webauthn_views.WebAuthnAuthOptionsView.as_view(), name='webauthn-auth-options'),
