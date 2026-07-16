@@ -43,7 +43,11 @@ export default function Profile() {
         })
         setTwoFactorEnabled(Boolean(profile.two_factor_enabled))
       } catch (err: any) {
-        setError(err?.response?.data?.detail || 'Failed to load profile.')
+        setError(
+          err?.response?.data?.detail ||
+            err?.response?.data?.error ||
+            'Failed to load profile.'
+        )
       } finally {
         setLoading(false)
       }
@@ -105,7 +109,24 @@ export default function Profile() {
 
       setMessage('Profile updated and securely re-encrypted.')
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Failed to update profile.')
+      const data = err?.response?.data
+      let msg = 'Failed to update profile.'
+      if (typeof data === 'string') {
+        msg = data
+      } else if (data?.error) {
+        msg = Array.isArray(data.error) ? data.error.join(' ') : String(data.error)
+      } else if (data?.detail) {
+        msg = String(data.detail)
+      } else if (data?.public_key) {
+        msg = Array.isArray(data.public_key) ? data.public_key.join(' ') : String(data.public_key)
+      } else if (data?.contact_info) {
+        msg = Array.isArray(data.contact_info) ? data.contact_info.join(' ') : String(data.contact_info)
+      } else if (data?.email) {
+        msg = 'Email: ' + (Array.isArray(data.email) ? data.email.join(' ') : String(data.email))
+      } else if (data?.username) {
+        msg = 'Username: ' + (Array.isArray(data.username) ? data.username.join(' ') : String(data.username))
+      }
+      setError(msg)
     } finally {
       setSaving(false)
     }

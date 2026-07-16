@@ -34,7 +34,7 @@ def health_check(request):
     return Response({
         'status': 'ok',
         'service': 'fiducia-api',
-        'build': 'admin-auth-demo-v3',
+        'build': 'webauthn-origin-fix-v4',
     })
 
 

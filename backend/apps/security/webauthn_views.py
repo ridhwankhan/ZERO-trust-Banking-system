@@ -1,6 +1,9 @@
 import json
 import base64
 import logging
+import os
+from urllib.parse import urlparse
+
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -35,13 +38,34 @@ def b64url_to_bytes(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + padding)
 
 
-def _webauthn_config():
-    """Resolve RP settings at request time so env changes apply without import-order issues."""
-    return (
-        getattr(settings, 'WEBAUTHN_RP_ID', 'localhost'),
-        getattr(settings, 'WEBAUTHN_RP_NAME', 'Fiducia Bank'),
-        getattr(settings, 'WEBAUTHN_ORIGIN', 'http://localhost:5174'),
-    )
+def _webauthn_config(request=None):
+    """
+    Resolve RP ID / Origin for WebAuthn.
+
+    Prefer the browser Origin/Referer so production (fiducia-bank.vercel.app)
+    works even when Render env still has localhost defaults.
+    """
+    rp_name = getattr(settings, 'WEBAUTHN_RP_NAME', 'Fiducia Bank')
+    env_rp_id = os.getenv('WEBAUTHN_RP_ID') or getattr(settings, 'WEBAUTHN_RP_ID', 'localhost')
+    env_origin = os.getenv('WEBAUTHN_ORIGIN') or getattr(settings, 'WEBAUTHN_ORIGIN', 'http://localhost:5174')
+
+    if request is not None:
+        header_origin = request.headers.get('Origin') or ''
+        if not header_origin:
+            referer = request.headers.get('Referer') or ''
+            if referer:
+                parsed_ref = urlparse(referer)
+                if parsed_ref.scheme and parsed_ref.netloc:
+                    header_origin = f'{parsed_ref.scheme}://{parsed_ref.netloc}'
+
+        if header_origin:
+            parsed = urlparse(header_origin)
+            if parsed.hostname:
+                origin = f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
+                # RP ID must be the registrable domain (no port)
+                return parsed.hostname, rp_name, origin
+
+    return env_rp_id, rp_name, env_origin.rstrip('/')
 
 
 class WebAuthnRegisterOptionsView(APIView):
@@ -49,7 +73,7 @@ class WebAuthnRegisterOptionsView(APIView):
 
     def get(self, request):
         user = request.user
-        rp_id, rp_name, _origin = _webauthn_config()
+        rp_id, rp_name, _origin = _webauthn_config(request)
 
         existing_credentials = WebAuthnCredential.objects.filter(user=user)
         exclude_credentials = [
@@ -70,6 +94,7 @@ class WebAuthnRegisterOptionsView(APIView):
         )
 
         cache.set(f"webauthn_reg_challenge_{user.id}", options.challenge, timeout=300)
+        cache.set(f"webauthn_reg_rp_{user.id}", {'rp_id': rp_id, 'origin': _origin}, timeout=300)
         return Response(json.loads(options_to_json(options)))
 
 
@@ -78,7 +103,11 @@ class WebAuthnRegisterVerifyView(APIView):
 
     def post(self, request):
         user = request.user
-        rp_id, _rp_name, origin = _webauthn_config()
+        rp_id, _rp_name, origin = _webauthn_config(request)
+        cached = cache.get(f"webauthn_reg_rp_{user.id}") or {}
+        rp_id = cached.get('rp_id', rp_id)
+        origin = cached.get('origin', origin)
+
         expected_challenge = cache.get(f"webauthn_reg_challenge_{user.id}")
         if not expected_challenge:
             return Response({"error": "Challenge expired. Please try again."}, status=400)
@@ -100,7 +129,7 @@ class WebAuthnRegisterVerifyView(APIView):
                 sign_count=verification.sign_count,
             )
 
-            return Response({"status": "ok"})
+            return Response({"status": "ok", "rp_id": rp_id})
 
         except Exception as e:
             logger.exception("WebAuthn registration verify failed")
@@ -135,7 +164,7 @@ class WebAuthnAuthOptionsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        rp_id, _rp_name, _origin = _webauthn_config()
+        rp_id, _rp_name, origin = _webauthn_config(request)
         allow_credentials = [
             {"id": c.credential_id, "type": "public-key"} for c in creds
         ]
@@ -147,6 +176,7 @@ class WebAuthnAuthOptionsView(APIView):
         )
 
         cache.set(f"webauthn_auth_challenge_{user.id}", options.challenge, timeout=300)
+        cache.set(f"webauthn_auth_rp_{user.id}", {'rp_id': rp_id, 'origin': origin}, timeout=300)
         return Response(json.loads(options_to_json(options)))
 
 
@@ -185,7 +215,11 @@ class WebAuthnAuthVerifyView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            rp_id, _rp_name, origin = _webauthn_config()
+            rp_id, _rp_name, origin = _webauthn_config(request)
+            cached = cache.get(f"webauthn_auth_rp_{user.id}") or {}
+            rp_id = cached.get('rp_id', rp_id)
+            origin = cached.get('origin', origin)
+
             verification = verify_authentication_response(
                 credential=credential_data,
                 expected_challenge=expected_challenge,

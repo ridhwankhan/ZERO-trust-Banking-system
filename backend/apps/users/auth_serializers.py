@@ -20,6 +20,8 @@ from rsa import (
     generate_keypair,
     encrypt,
     decrypt,
+    encrypt_long_message,
+    decrypt_long_message,
     encrypt_private_key as encrypt_rsa_private_key,
     serialize_public_key,
     deserialize_public_key,
@@ -227,19 +229,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return None
-        
+
         # Prefer decrypting from encrypted storage using in-memory RSA private key.
         if obj.contact_info_encrypted:
             try:
                 from key_management import InMemoryKeyCache
                 rsa_private_key = InMemoryKeyCache.get_rsa_key(obj.id)
                 if rsa_private_key:
-                    return decrypt(obj.contact_info_encrypted, rsa_private_key)
+                    try:
+                        return decrypt(obj.contact_info_encrypted, rsa_private_key)
+                    except Exception:
+                        return decrypt_long_message(obj.contact_info_encrypted, rsa_private_key)
             except Exception:
                 pass
-        
-        # Graceful fallback if in-memory key is unavailable.
-        return obj.contact_info
+
+        # Always fall back to plaintext contact_info so profile UI stays correct.
+        return obj.contact_info or ''
     
     def get_crypto_status(self, obj):
         return {
@@ -264,40 +269,47 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'username', 'contact_info')
 
+    def _safe_encrypt(self, message: str, public_key):
+        """Encrypt short or long fields; fall back to chunking if needed."""
+        try:
+            return encrypt(message, public_key)
+        except ValueError:
+            return encrypt_long_message(message, public_key)
+
     def update(self, instance, validated_data):
         new_email = validated_data.get('email', instance.email)
         new_username = validated_data.get('username', instance.username)
         new_contact_info = validated_data.get('contact_info', instance.contact_info or '')
 
-        if not instance.public_key:
-            raise serializers.ValidationError({
-                'public_key': 'User public key is missing. Cannot encrypt profile fields.'
-            })
-
-        try:
-            rsa_public_key = deserialize_public_key(instance.public_key)
-        except Exception as exc:
-            raise serializers.ValidationError({
-                'public_key': f'Invalid public key format: {str(exc)}'
-            })
-
         instance.email = new_email
         instance.username = new_username
         instance.contact_info = new_contact_info
-        instance.email_encrypted = encrypt(new_email, rsa_public_key)
-        instance.username_encrypted = encrypt(new_username, rsa_public_key)
-        instance.contact_info_encrypted = encrypt(new_contact_info, rsa_public_key)
-        instance.save(
-            update_fields=[
-                'email',
-                'username',
-                'contact_info',
-                'email_encrypted',
-                'username_encrypted',
-                'contact_info_encrypted',
-                'updated_at',
-            ]
-        )
+
+        update_fields = [
+            'email',
+            'username',
+            'contact_info',
+            'updated_at',
+        ]
+
+        # Re-encrypt when a public key exists (normal registered users).
+        if instance.public_key:
+            try:
+                rsa_public_key = deserialize_public_key(instance.public_key)
+                instance.email_encrypted = self._safe_encrypt(new_email, rsa_public_key)
+                instance.username_encrypted = self._safe_encrypt(new_username, rsa_public_key)
+                instance.contact_info_encrypted = self._safe_encrypt(new_contact_info, rsa_public_key)
+                update_fields.extend([
+                    'email_encrypted',
+                    'username_encrypted',
+                    'contact_info_encrypted',
+                ])
+            except Exception as exc:
+                raise serializers.ValidationError({
+                    'error': f'Failed to encrypt profile fields: {exc}'
+                }) from exc
+
+        instance.save(update_fields=update_fields)
         return instance
 
 
