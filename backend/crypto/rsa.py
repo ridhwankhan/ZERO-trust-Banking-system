@@ -6,6 +6,7 @@ import hashlib
 import random
 import base64
 import json
+import os
 from typing import Tuple, Optional
 
 
@@ -221,8 +222,8 @@ class KeyManager:
         Encrypt a private key using a password-derived key.
         Returns a JSON string with salt and encrypted key.
         """
-        # Generate random salt
-        salt = random.randbytes(16)
+        # Generate random salt (os.urandom works on all supported Python versions)
+        salt = os.urandom(16)
         
         # Derive key from password
         derived_key = cls.derive_key(password, salt)

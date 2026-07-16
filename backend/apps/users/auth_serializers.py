@@ -89,7 +89,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         # CPU-heavy crypto before any DB write. Refresh the connection afterward so
         # serverless Postgres (e.g. Neon) does not fail with a stale socket.
         try:
-            rsa_public_key, rsa_private_key = generate_keypair(bits=1024)
+            # 1024-bit pure-Python RSA is very slow/memory-heavy on free PaaS tiers.
+            # Override with REGISTRATION_RSA_BITS if needed (min 512).
+            rsa_bits = int(os.environ.get('REGISTRATION_RSA_BITS', '512'))
+            rsa_bits = max(512, min(rsa_bits, 2048))
+            rsa_public_key, rsa_private_key = generate_keypair(bits=rsa_bits)
             email_encrypted = encrypt(email, rsa_public_key)
             username_encrypted = encrypt(username, rsa_public_key)
             contact_info_encrypted = encrypt(contact_info, rsa_public_key)

@@ -114,6 +114,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
+    'EXCEPTION_HANDLER': 'apps.api.exception_handler.custom_exception_handler',
 }
 
 CORS_ALLOWED_ORIGINS = [

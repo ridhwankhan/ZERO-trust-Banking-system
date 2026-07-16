@@ -3,6 +3,7 @@ Elliptic Curve Cryptography (ECC) implementation from scratch.
 Implements secp256k1-like curve (simplified for clarity).
 No external crypto libraries used.
 """
+import os
 import random
 import hashlib
 import base64
@@ -302,8 +303,8 @@ class ECCKeyManager:
         Encrypt an ECC private key using a password-derived key.
         Returns a JSON string with salt and encrypted key.
         """
-        # Generate random salt
-        salt = random.randbytes(16)
+        # Generate random salt (os.urandom for broad Python compatibility)
+        salt = os.urandom(16)
         
         # Derive key from password
         derived_key = cls.derive_key(password, salt)
