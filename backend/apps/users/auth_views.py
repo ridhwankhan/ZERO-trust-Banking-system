@@ -369,35 +369,76 @@ class ChangePasswordView(APIView):
 
 # ==================== ADMIN/AUTHORITY AUTH ====================
 
+# Demo credentials for CSE447 / presentation (always work; auto-provision users)
+DEMO_ADMIN_EMAIL = 'admin@fiducia.bd'
+DEMO_ADMIN_PASSWORD = 'admin123'
+DEMO_AUTHORITY_EMAIL = 'authority@fiducia.bd'
+DEMO_AUTHORITY_PASSWORD = 'authority123'
+
+
+def _ensure_demo_user(*, email: str, username: str, password: str, role: str) -> User:
+    """Get or create a demo role account and reset its password to the hardcoded value."""
+    user, created = User.objects.get_or_create(
+        email=email,
+        defaults={
+            'username': username,
+            'role': role,
+            'is_staff': True,
+            'is_active': True,
+            'is_verified': True,
+            'kyc_status': User.KYC_VERIFIED,
+        },
+    )
+    # Keep role/password in sync so hardcoded login never drifts
+    dirty = False
+    if user.role != role:
+        user.role = role
+        dirty = True
+    if not user.is_staff:
+        user.is_staff = True
+        dirty = True
+    if not user.is_active:
+        user.is_active = True
+        dirty = True
+    if created or dirty or not user.check_password(password):
+        user.set_password(password)
+        dirty = True
+    if dirty or created:
+        user.save()
+    return user
+
+
 class AdminLoginView(APIView):
-    """Admin login endpoint."""
+    """Admin login endpoint (supports hardcoded demo credentials)."""
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
-        """Login as admin."""
-        email = request.data.get('email')
-        password = request.data.get('password')
-        
+        email = (request.data.get('email') or '').strip().lower()
+        password = request.data.get('password') or ''
+
         try:
-            user = User.objects.get(email=email)
-            
-            # Check if admin
-            if not user.is_admin:
-                return Response(
-                    {'error': 'Admin access required'},
-                    status=status.HTTP_403_FORBIDDEN
+            # Hardcoded demo admin — always succeeds and provisions the account
+            if email in {DEMO_ADMIN_EMAIL, 'admin@example.com'} and password == DEMO_ADMIN_PASSWORD:
+                user = _ensure_demo_user(
+                    email=DEMO_ADMIN_EMAIL,
+                    username='admin',
+                    password=DEMO_ADMIN_PASSWORD,
+                    role=User.ROLE_ADMIN,
                 )
-            
-            # Verify password
-            if not user.check_password(password):
-                return Response(
-                    {'error': 'Invalid credentials'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            
-            # Generate tokens
+            else:
+                user = User.objects.get(email__iexact=email)
+                if not user.is_admin:
+                    return Response(
+                        {'error': 'Admin access required'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if not user.check_password(password):
+                    return Response(
+                        {'error': 'Invalid credentials'},
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+
             refresh = RefreshToken.for_user(user)
-            
             return Response({
                 'user': {
                     'id': user.id,
@@ -408,52 +449,54 @@ class AdminLoginView(APIView):
                 },
                 'tokens': {
                     'refresh': str(refresh),
-                    'access': str(refresh.access_token)
+                    'access': str(refresh.access_token),
                 },
-                'message': 'Admin login successful'
+                'message': 'Admin login successful',
             }, status=status.HTTP_200_OK)
-            
+
         except User.DoesNotExist:
             return Response(
                 {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_401_UNAUTHORIZED,
             )
         except Exception as e:
             return Response(
                 {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
 class AuthorityLoginView(APIView):
-    """Central Authority login endpoint."""
+    """Central Authority login endpoint (supports hardcoded demo credentials)."""
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
-        """Login as authority."""
-        email = request.data.get('email')
-        password = request.data.get('password')
-        
+        email = (request.data.get('email') or '').strip().lower()
+        password = request.data.get('password') or ''
+
         try:
-            user = User.objects.get(email=email)
-            
-            # Check if authority
-            if user.role != User.ROLE_AUTHORITY:
-                return Response(
-                    {'error': 'Authority access required'},
-                    status=status.HTTP_403_FORBIDDEN
+            # Hardcoded demo authority — always succeeds and provisions the account
+            if email in {DEMO_AUTHORITY_EMAIL, 'authority@example.com'} and password == DEMO_AUTHORITY_PASSWORD:
+                user = _ensure_demo_user(
+                    email=DEMO_AUTHORITY_EMAIL,
+                    username='authority',
+                    password=DEMO_AUTHORITY_PASSWORD,
+                    role=User.ROLE_AUTHORITY,
                 )
-            
-            # Verify password
-            if not user.check_password(password):
-                return Response(
-                    {'error': 'Invalid credentials'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            
-            # Generate tokens
+            else:
+                user = User.objects.get(email__iexact=email)
+                if user.role != User.ROLE_AUTHORITY:
+                    return Response(
+                        {'error': 'Authority access required'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if not user.check_password(password):
+                    return Response(
+                        {'error': 'Invalid credentials'},
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+
             refresh = RefreshToken.for_user(user)
-            
             return Response({
                 'user': {
                     'id': user.id,
@@ -463,18 +506,18 @@ class AuthorityLoginView(APIView):
                 },
                 'tokens': {
                     'refresh': str(refresh),
-                    'access': str(refresh.access_token)
+                    'access': str(refresh.access_token),
                 },
-                'message': 'Authority login successful'
+                'message': 'Authority login successful',
             }, status=status.HTTP_200_OK)
-            
+
         except User.DoesNotExist:
             return Response(
                 {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_401_UNAUTHORIZED,
             )
         except Exception as e:
             return Response(
                 {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )

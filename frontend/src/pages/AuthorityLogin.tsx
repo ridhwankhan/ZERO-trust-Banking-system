@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Shield, ArrowRight } from 'lucide-react'
+import { Shield, ArrowRight, Home, Eye, EyeOff } from 'lucide-react'
 import { api } from '../services/api'
 import '../pages/Auth.css'
 
 export default function AuthorityLogin() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    email: '',
+    email: 'authority@fiducia.bd',
     password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -40,6 +41,11 @@ export default function AuthorityLogin() {
 
   return (
     <div className="auth-container">
+      <Link to="/" className="auth-home-link">
+        <Home size={18} />
+        <span>Fiducia Bank</span>
+      </Link>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -58,6 +64,10 @@ export default function AuthorityLogin() {
         <h1 className="auth-title">Central Authority Login</h1>
         <p className="auth-subtitle">Verify users and manage KYC</p>
 
+        <div className="demo-creds">
+          Demo: <strong>authority@fiducia.bd</strong> / <strong>authority123</strong>
+        </div>
+
         {error && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -70,7 +80,6 @@ export default function AuthorityLogin() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="input-group">
-            {/* <Mail size={20} className="input-icon" /> */}
             <input
               type="email"
               placeholder="Authority email"
@@ -81,14 +90,21 @@ export default function AuthorityLogin() {
           </div>
 
           <div className="input-group">
-            {/* <Lock size={20} className="input-icon" /> */}
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <motion.button
@@ -114,26 +130,10 @@ export default function AuthorityLogin() {
 
         <p className="auth-footer">
           Looking for user login?{' '}
-          <a href="/login" className="auth-link">
+          <Link to="/login" className="auth-link">
             Sign in here
-          </a>
+          </Link>
         </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="auth-info"
-      >
-        {/* <h3>Authority Panel Features</h3>
-        <ul>
-          <li>Review and approve KYC requests</li>
-          <li>User identity verification</li>
-          <li>Issue and manage key pairs</li>
-          <li>Track verification statistics</li>
-          <li>Audit user verification history</li>
-        </ul> */}
       </motion.div>
     </div>
   )

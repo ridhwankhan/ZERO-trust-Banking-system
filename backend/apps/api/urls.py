@@ -34,7 +34,7 @@ def health_check(request):
     return Response({
         'status': 'ok',
         'service': 'fiducia-api',
-        'build': 'reg-fix-v2',
+        'build': 'admin-auth-demo-v3',
     })
 
 
