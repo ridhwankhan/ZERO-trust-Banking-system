@@ -53,12 +53,12 @@ class DepositInitiateView(APIView):
         
         try:
             if getattr(request.user, 'transaction_frozen', False):
-            return Response(
-                {'error': 'Your transactions are currently frozen. Please unlock your account first.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+                return Response(
+                    {'error': 'Your transactions are currently frozen. Please unlock your account first.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             
-        amount = Decimal(request.data.get('amount', 0))
+            amount = Decimal(request.data.get('amount', 0))
             
             if amount <= 0:
                 return Response(
