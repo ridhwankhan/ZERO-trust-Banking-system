@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Shield, ArrowRight, KeyRound, UserCheck } from 'lucide-react'
+import { Shield, ArrowRight, KeyRound, UserCheck, Home, Eye, EyeOff } from 'lucide-react'
 import { login, verifyTwoFactorLogin, api } from '../services/api'
 import { startAuthentication } from '@simplewebauthn/browser'
 import './Auth.css'
@@ -12,6 +12,7 @@ export default function Login() {
     email: '',
     password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [twoFactorStep, setTwoFactorStep] = useState(false)
@@ -23,21 +24,21 @@ export default function Login() {
       setError('Please enter your email first to use Passkey.')
       return
     }
-    
+
     setLoading(true)
     setError('')
     try {
-      // 1. Get auth options from server
-      const resp = await api.post('/security/webauthn/authenticate/generate-options/', { email: formData.email })
+      const resp = await api.post('/security/webauthn/authenticate/generate-options/', {
+        email: formData.email,
+      })
       const options = resp.data
 
-      // 2. Trigger native OS biometric prompt
-      const asseResp = await startAuthentication(options)
+      // @simplewebauthn/browser v13+ expects { optionsJSON }
+      const asseResp = await startAuthentication({ optionsJSON: options })
 
-      // 3. Send signature to server
       const verifyResp = await api.post('/security/webauthn/authenticate/verify/', {
         email: formData.email,
-        credential: asseResp
+        credential: asseResp,
       })
 
       const response = verifyResp.data
@@ -52,13 +53,22 @@ export default function Login() {
       localStorage.setItem('refresh_token', response.refresh)
       localStorage.setItem('user', JSON.stringify(response.user))
       navigate('/dashboard')
-
     } catch (err: any) {
-      console.error("Passkey login failed:", err)
+      console.error('Passkey login failed:', err)
       if (err.name === 'NotAllowedError') {
         setError('Login cancelled.')
+      } else if (err.response?.status === 404) {
+        setError(
+          'Passkey login is not available on the server yet. Please sign in with your password, then enroll a passkey in Security Center.'
+        )
       } else {
-        setError(err.response?.data?.error || err.message || 'Passkey login failed.')
+        const data = err.response?.data
+        const msg =
+          (typeof data?.error === 'string' && data.error) ||
+          (typeof data?.detail === 'string' && data.detail) ||
+          err.message ||
+          'Passkey login failed.'
+        setError(msg)
       }
     } finally {
       setLoading(false)
@@ -71,7 +81,7 @@ export default function Login() {
     setError('')
     try {
       const response = await login(formData)
-      
+
       if (response.user?.two_factor_enabled) {
         setPendingUserId(response.user.id)
         setTwoFactorStep(true)
@@ -89,11 +99,19 @@ export default function Login() {
     } catch (err: any) {
       let errorMessage = 'Login failed. Please check your credentials.'
       if (!err.response) {
-        errorMessage = 'Unable to reach backend server. Please check your internet connection or the server URL.'
+        errorMessage =
+          'Unable to reach backend server. Please check your internet connection or the server URL.'
       } else if (err.response.status === 401) {
-        errorMessage = 'User not found or incorrect password. Please check your credentials or register.'
+        errorMessage =
+          'User not found or incorrect password. Please check your credentials or register.'
       } else if (err.response.data) {
-        errorMessage = err.response.data.detail || err.response.data.message || err.response.data.error || errorMessage
+        const data = err.response.data
+        if (typeof data === 'string' && (data.includes('<html') || data.includes('Server Error'))) {
+          errorMessage = 'Server error during login. Please try again.'
+        } else {
+          errorMessage =
+            data.detail || data.message || data.error || errorMessage
+        }
       }
       setError(errorMessage)
       console.error('Login error:', err.response?.data || err)
@@ -138,6 +156,11 @@ export default function Login() {
 
   return (
     <div className="auth-container">
+      <Link to="/" className="auth-home-link">
+        <Home size={18} />
+        <span>Fiducia Bank</span>
+      </Link>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -155,7 +178,9 @@ export default function Login() {
 
         <h1 className="auth-title">{twoFactorStep ? 'Two-Factor Verification' : 'Welcome Back'}</h1>
         <p className="auth-subtitle">
-          {twoFactorStep ? 'Enter your 6-digit authenticator code to continue' : 'Sign in to your secure account'}
+          {twoFactorStep
+            ? 'Enter your 6-digit authenticator code to continue'
+            : 'Sign in to your secure account'}
         </p>
 
         {error && (
@@ -190,12 +215,20 @@ export default function Login() {
 
               <div className="input-group">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
 
               <motion.button
@@ -220,11 +253,12 @@ export default function Login() {
 
               <button
                 type="button"
-                className="auth-button"
-                style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.2)', marginTop: '0.5rem' }}
+                className="auth-button auth-button-secondary"
                 onClick={handlePasskeyLogin}
+                disabled={loading}
               >
-                <UserCheck size={20} style={{ marginRight: '0.5rem' }} /> Log in with Passkey / Face ID
+                <UserCheck size={20} style={{ marginRight: '0.5rem' }} /> Log in with Passkey /
+                Face ID
               </button>
             </motion.form>
           ) : (
@@ -305,7 +339,6 @@ export default function Login() {
           </p>
         )}
       </motion.div>
-
     </div>
   )
 }

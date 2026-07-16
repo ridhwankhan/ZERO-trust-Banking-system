@@ -2,6 +2,7 @@
 Security App URL Configuration
 """
 
+import logging
 from django.urls import path
 from .views import (
     # Admin endpoints
@@ -23,7 +24,8 @@ from .views import (
     OTPRequestView,
     OTPVerifyView,
 )
-from . import webauthn_views
+
+logger = logging.getLogger(__name__)
 
 urlpatterns = [
     # ==================== ADMIN SECURITY DASHBOARD ====================
@@ -46,10 +48,16 @@ urlpatterns = [
     # ==================== ADAPTIVE AUTH (OTP) ====================
     path('otp/request/', OTPRequestView.as_view(), name='security-otp-request'),
     path('otp/verify/', OTPVerifyView.as_view(), name='security-otp-verify'),
-
-    # ==================== WEBAUTHN / PASSKEYS ====================
-    path('webauthn/register/generate-options/', webauthn_views.WebAuthnRegisterOptionsView.as_view(), name='webauthn-register-options'),
-    path('webauthn/register/verify/', webauthn_views.WebAuthnRegisterVerifyView.as_view(), name='webauthn-register-verify'),
-    path('webauthn/authenticate/generate-options/', webauthn_views.WebAuthnAuthOptionsView.as_view(), name='webauthn-auth-options'),
-    path('webauthn/authenticate/verify/', webauthn_views.WebAuthnAuthVerifyView.as_view(), name='webauthn-auth-verify'),
 ]
+
+try:
+    from . import webauthn_views
+    urlpatterns += [
+        path('webauthn/register/generate-options/', webauthn_views.WebAuthnRegisterOptionsView.as_view(), name='webauthn-register-options'),
+        path('webauthn/register/verify/', webauthn_views.WebAuthnRegisterVerifyView.as_view(), name='webauthn-register-verify'),
+        path('webauthn/authenticate/generate-options/', webauthn_views.WebAuthnAuthOptionsView.as_view(), name='webauthn-auth-options'),
+        path('webauthn/authenticate/verify/', webauthn_views.WebAuthnAuthVerifyView.as_view(), name='webauthn-auth-verify'),
+    ]
+except Exception as exc:
+    # Keep the rest of the security API up if the webauthn package failed to install
+    logger.exception('WebAuthn routes disabled: %s', exc)

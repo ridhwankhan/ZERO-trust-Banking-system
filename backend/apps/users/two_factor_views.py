@@ -5,8 +5,8 @@ from django.conf import settings
 import sys
 import os
 
-# Add crypto module to path
-crypto_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crypto')
+# Add crypto module to path (backend/crypto)
+crypto_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'crypto')
 if crypto_path not in sys.path:
     sys.path.insert(0, crypto_path)
 

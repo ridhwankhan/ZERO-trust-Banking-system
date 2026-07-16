@@ -15,7 +15,14 @@ from .auth_serializers import (
 # Import key management system
 import sys
 import os
-crypto_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crypto')
+import logging
+
+logger = logging.getLogger(__name__)
+
+crypto_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    'crypto',
+)
 if crypto_path not in sys.path:
     sys.path.insert(0, crypto_path)
 
@@ -60,12 +67,26 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        
-        refresh = RefreshToken.for_user(user)
-        
+        try:
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+        except (DRFValidationError, DjangoValidationError):
+            raise
+        except Exception as exc:
+            logger.exception('Registration failed')
+            return Response(
+                {
+                    'error': 'Registration failed. Please try again.',
+                    'detail': str(exc),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
         return Response({
             'user': {
                 'id': user.id,

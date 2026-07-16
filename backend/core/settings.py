@@ -175,6 +175,15 @@ FAILED_LOGIN_THRESHOLD = int(os.getenv('FAILED_LOGIN_THRESHOLD', '3'))
 FAILED_LOGIN_WINDOW_MINUTES = int(os.getenv('FAILED_LOGIN_WINDOW_MINUTES', '10'))
 LARGE_TRANSACTION_AMOUNT = float(os.getenv('LARGE_TRANSACTION_AMOUNT', '5000'))
 
+# WebAuthn / Passkeys (Face ID, Touch ID, Windows Hello)
+# Production example:
+#   WEBAUTHN_RP_ID=fiducia-bank.vercel.app
+#   WEBAUTHN_ORIGIN=https://fiducia-bank.vercel.app
+#   WEBAUTHN_RP_NAME=Fiducia Bank
+WEBAUTHN_RP_ID = os.getenv('WEBAUTHN_RP_ID', 'localhost')
+WEBAUTHN_RP_NAME = os.getenv('WEBAUTHN_RP_NAME', 'Fiducia Bank')
+WEBAUTHN_ORIGIN = os.getenv('WEBAUTHN_ORIGIN', 'http://localhost:5174')
+
 # Logging
 LOGGING = {
     'version': 1,

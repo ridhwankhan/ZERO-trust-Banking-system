@@ -8,8 +8,11 @@ import os
 # Import transactions models for KYC request
 from apps.transactions.models import KYCRequest
 
-# Add crypto module to path if needed
-crypto_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crypto')
+# backend/crypto (auth_serializers lives in backend/apps/users/)
+crypto_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    'crypto',
+)
 if crypto_path not in sys.path:
     sys.path.insert(0, crypto_path)
 
@@ -72,58 +75,67 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from django.db import close_old_connections, transaction
+        from django.db.utils import OperationalError
+
         validated_data.pop('password_confirm')
         validated_data.pop('admin_code', None)  # Remove admin_code from user creation
-        password = validated_data['password']
-        contact_info = validated_data['contact_info']
-        
-        # Generate RSA key pair
-        rsa_public_key, rsa_private_key = generate_keypair(bits=1024)
-        
-        # Encrypt email and username with RSA public key
-        email_encrypted = encrypt(validated_data['email'], rsa_public_key)
-        username_encrypted = encrypt(validated_data['username'], rsa_public_key)
-        contact_info_encrypted = encrypt(contact_info, rsa_public_key)
-        
-        # Encrypt RSA private key with password-derived key
-        rsa_encrypted_private_key = encrypt_rsa_private_key(rsa_private_key, password)
-        
-        # Serialize RSA public key for storage
-        rsa_public_key_str = serialize_public_key(rsa_public_key)
-        
-        # Generate ECC key pair
-        ecc = ECCEncryption()
-        ecc_private_key, ecc_public_key = ecc.generate_keypair()
-        
-        # Encrypt ECC private key with password-derived key
-        ecc_encrypted_private_key = ecc_encrypt_private_key(ecc_private_key, password)
-        
-        # Serialize ECC public key for storage
-        ecc_public_key_str = ecc.serialize_public_key(ecc_public_key)
-        
-        user = User.objects.create(
-            email=validated_data['email'],  # Keep plaintext for Django auth
-            username=validated_data['username'],  # Keep plaintext for Django auth
-            contact_info=contact_info,
-            contact_info_encrypted=contact_info_encrypted,
-            email_encrypted=email_encrypted,
-            username_encrypted=username_encrypted,
-            public_key=rsa_public_key_str,
-            encrypted_private_key=rsa_encrypted_private_key,
-            ecc_public_key=ecc_public_key_str,
-            ecc_encrypted_private_key=ecc_encrypted_private_key,
-            role=User.ROLE_USER
-        )
-        user.set_password(password)
-        user.save()
-        
-        # Auto-create KYC request for new user
-        KYCRequest.objects.create(
-            user=user,
-            status=KYCRequest.STATUS_PENDING
-        )
-        
-        return user
+        validated_data.pop('role', None)
+        password = validated_data.pop('password')
+        contact_info = validated_data.pop('contact_info')
+        email = validated_data['email']
+        username = validated_data['username']
+
+        # CPU-heavy crypto before any DB write. Refresh the connection afterward so
+        # serverless Postgres (e.g. Neon) does not fail with a stale socket.
+        try:
+            rsa_public_key, rsa_private_key = generate_keypair(bits=1024)
+            email_encrypted = encrypt(email, rsa_public_key)
+            username_encrypted = encrypt(username, rsa_public_key)
+            contact_info_encrypted = encrypt(contact_info, rsa_public_key)
+            rsa_encrypted_private_key = encrypt_rsa_private_key(rsa_private_key, password)
+            rsa_public_key_str = serialize_public_key(rsa_public_key)
+
+            ecc = ECCEncryption()
+            ecc_private_key, ecc_public_key = ecc.generate_keypair()
+            ecc_encrypted_private_key = ecc_encrypt_private_key(ecc_private_key, password)
+            ecc_public_key_str = ecc.serialize_public_key(ecc_public_key)
+        except Exception as exc:
+            raise serializers.ValidationError({
+                'error': f'Failed to generate encryption keys: {exc}'
+            }) from exc
+
+        close_old_connections()
+
+        def _create_user():
+            user = User(
+                email=email,
+                username=username,
+                contact_info=contact_info,
+                contact_info_encrypted=contact_info_encrypted,
+                email_encrypted=email_encrypted,
+                username_encrypted=username_encrypted,
+                public_key=rsa_public_key_str,
+                encrypted_private_key=rsa_encrypted_private_key,
+                ecc_public_key=ecc_public_key_str,
+                ecc_encrypted_private_key=ecc_encrypted_private_key,
+                role=User.ROLE_USER,
+            )
+            user.set_password(password)
+            user.save()
+            KYCRequest.objects.get_or_create(
+                user=user,
+                defaults={'status': KYCRequest.STATUS_PENDING},
+            )
+            return user
+
+        try:
+            with transaction.atomic():
+                return _create_user()
+        except OperationalError:
+            close_old_connections()
+            with transaction.atomic():
+                return _create_user()
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -314,10 +326,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         import sys
         import os
         
-        # Add crypto path
         crypto_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            'crypto'
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'crypto',
         )
         if crypto_path not in sys.path:
             sys.path.insert(0, crypto_path)

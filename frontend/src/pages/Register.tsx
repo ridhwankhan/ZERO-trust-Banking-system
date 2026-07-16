@@ -1,9 +1,35 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Shield, ArrowRight, CheckCircle } from 'lucide-react'
+import { Shield, ArrowRight, CheckCircle, Home, Eye, EyeOff } from 'lucide-react'
 import { register } from '../services/api'
 import './Auth.css'
+
+function extractErrorMessage(err: any, fallback: string): string {
+  if (!err.response) {
+    return 'Unable to reach backend server. Please check your internet connection or the server URL.'
+  }
+
+  const data = err.response.data
+  if (!data) return fallback
+
+  if (typeof data === 'string') {
+    if (data.includes('<!doctype') || data.includes('<html') || data.includes('Server Error')) {
+      return 'Server error during registration. Please try again in a moment.'
+    }
+    return data
+  }
+
+  if (data.password && Array.isArray(data.password)) return data.password.join(' ')
+  if (data.email && Array.isArray(data.email)) return 'Email: ' + data.email.join(' ')
+  if (data.username && Array.isArray(data.username)) return 'Username: ' + data.username.join(' ')
+  if (data.contact_info && Array.isArray(data.contact_info)) return 'Contact: ' + data.contact_info.join(' ')
+  if (data.error) return typeof data.error === 'string' ? data.error : fallback
+  if (data.detail) return typeof data.detail === 'string' ? data.detail : fallback
+  if (data.message) return data.message
+
+  return fallback
+}
 
 export default function Register() {
   const navigate = useNavigate()
@@ -14,6 +40,8 @@ export default function Register() {
     password: '',
     password_confirm: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -40,31 +68,7 @@ export default function Register() {
       setSuccess(true)
       setTimeout(() => navigate('/dashboard'), 2000)
     } catch (err: any) {
-      let errorMessage = 'Registration failed. Please try again.'
-      
-      if (!err.response) {
-        errorMessage = 'Unable to reach backend server. Please check your internet connection or the server URL.'
-      } else if (err.response.data) {
-        const data = err.response.data
-        
-        if (data.password && Array.isArray(data.password)) {
-          errorMessage = data.password.join(' ')
-        } else if (data.email && Array.isArray(data.email)) {
-          errorMessage = 'Email: ' + data.email.join(' ')
-        } else if (data.username && Array.isArray(data.username)) {
-          errorMessage = 'Username: ' + data.username.join(' ')
-        } else if (data.detail) {
-          errorMessage = data.detail
-        } else if (data.message) {
-          errorMessage = data.message
-        } else if (data.error) {
-          errorMessage = data.error
-        } else if (typeof data === 'string') {
-          errorMessage = data
-        }
-      }
-      
-      setError(errorMessage)
+      setError(extractErrorMessage(err, 'Registration failed. Please try again.'))
       console.error('Registration error:', err.response?.data || err)
     } finally {
       setLoading(false)
@@ -73,6 +77,11 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+      <Link to="/" className="auth-home-link">
+        <Home size={18} />
+        <span>Fiducia Bank</span>
+      </Link>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -114,7 +123,6 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="input-group">
-            {/* <Mail size={20} className="input-icon" /> */}
             <input
               type="email"
               placeholder="Email address"
@@ -125,7 +133,6 @@ export default function Register() {
           </div>
 
           <div className="input-group">
-            {/* <User size={20} className="input-icon" /> */}
             <input
               type="text"
               placeholder="Username"
@@ -146,16 +153,23 @@ export default function Register() {
           </div>
 
           <div className="input-group">
-            {/* <Lock size={20} className="input-icon" /> */}
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          
+
           <div className="password-tips">
             <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
               Password must have: 8+ characters, mix of letters & numbers
@@ -163,14 +177,21 @@ export default function Register() {
           </div>
 
           <div className="input-group">
-            {/* <Lock size={20} className="input-icon" /> */}
             <input
-              type="password"
+              type={showPasswordConfirm ? 'text' : 'password'}
               placeholder="Confirm Password"
               value={formData.password_confirm}
               onChange={(e) => setFormData({ ...formData, password_confirm: e.target.value })}
               required
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPasswordConfirm((v) => !v)}
+              aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+            >
+              {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <motion.button

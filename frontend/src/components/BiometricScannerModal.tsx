@@ -37,7 +37,8 @@ export default function BiometricScannerModal({
       const options = resp.data
 
       // 2. Pass options to the browser to trigger native biometric prompt (Windows Hello, FaceID, TouchID)
-      const attResp = await startRegistration(options)
+      // @simplewebauthn/browser v13+ expects { optionsJSON }
+      const attResp = await startRegistration({ optionsJSON: options })
 
       // 3. Send the response back to the server for verification
       await api.post('/security/webauthn/register/verify/', attResp)
