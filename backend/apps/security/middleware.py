@@ -76,6 +76,28 @@ class SecurityProtectionMiddleware(MiddlewareMixin):
                     f"User {user.email} tried admin path {path}",
                 )
 
+        # 4. Block API access from devices the user explicitly revoked
+        if path.startswith('/api/') and not path.startswith('/api/auth/'):
+            user = getattr(request, 'user', None)
+            fp = request.META.get('HTTP_X_DEVICE_FINGERPRINT', '')
+            if user and user.is_authenticated and fp:
+                from .models import TrustedDevice
+                if TrustedDevice.objects.filter(
+                    user=user,
+                    device_fingerprint=fp,
+                    trust_status=TrustedDevice.STATUS_REMOVED,
+                ).exists():
+                    return JsonResponse(
+                        {
+                            'error': (
+                                'This device was removed from your account. '
+                                'Sign in again from a trusted device.'
+                            ),
+                            'code': 'device_revoked',
+                        },
+                        status=403,
+                    )
+
         return None  # Allow the request
 
     # -----------------------------------------------------------------

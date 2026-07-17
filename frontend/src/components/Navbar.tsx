@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Shield, LogOut, User as UserIcon } from 'lucide-react'
 import { api, logout } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import './Navbar.css'
 
 export default function Navbar() {
@@ -16,14 +17,9 @@ export default function Navbar() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/admin-login' || location.pathname === '/authority-login'
   const isAuthenticated = !!localStorage.getItem('access_token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
-
-  useEffect(() => {
-    if (isAuthenticated && !isAuthPage) {
-      fetchNotifications()
-      const interval = setInterval(fetchNotifications, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [isAuthenticated, isAuthPage, location.pathname])
+  const role = localStorage.getItem('role') || user.role || 'user'
+  const isStaff = role === 'admin' || role === 'authority'
+  const homePath = role === 'admin' ? '/admin-dashboard' : role === 'authority' ? '/authority-dashboard' : '/dashboard'
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -44,6 +40,13 @@ export default function Navbar() {
       console.error('Failed to fetch notifications:', err)
     }
   }
+
+  useAutoRefresh(fetchNotifications, {
+    scope: 'notifications',
+    intervalMs: 5000,
+    enabled: isAuthenticated && !isAuthPage,
+    deps: [isAuthenticated, isAuthPage, location.pathname],
+  })
 
   const markAsRead = async (id?: number) => {
     try {
@@ -80,7 +83,7 @@ export default function Navbar() {
   return (
     <nav className="navbar-container">
       <div className="navbar-left">
-        <Link to="/dashboard" className="navbar-logo-group">
+        <Link to={homePath} className="navbar-logo-group">
           <Shield size={32} className="header-logo-icon" />
           <div className="header-brand-info">
             <h1>Fiducia Bank</h1>
@@ -89,23 +92,25 @@ export default function Navbar() {
         </Link>
       </div>
 
-      <div className="navbar-center-links">
-        <Link to="/dashboard" className={`center-nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
-          Dashboard
-        </Link>
-        <Link to="/transfer" className={`center-nav-link ${location.pathname === '/transfer' ? 'active' : ''}`}>
-          Transfer
-        </Link>
-        <Link to="/security-center" className={`center-nav-link ${location.pathname === '/security-center' ? 'active' : ''}`}>
-          Security
-        </Link>
-        <Link to="/history" className={`center-nav-link ${location.pathname === '/history' ? 'active' : ''}`}>
-          History
-        </Link>
-        <Link to="/profile" className={`center-nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
-          Profile
-        </Link>
-      </div>
+      {!isStaff && (
+        <div className="navbar-center-links">
+          <Link to="/dashboard" className={`center-nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+            Dashboard
+          </Link>
+          <Link to="/transfer" className={`center-nav-link ${location.pathname === '/transfer' ? 'active' : ''}`}>
+            Transfer
+          </Link>
+          <Link to="/security-center" className={`center-nav-link ${location.pathname === '/security-center' ? 'active' : ''}`}>
+            Security
+          </Link>
+          <Link to="/history" className={`center-nav-link ${location.pathname === '/history' ? 'active' : ''}`}>
+            History
+          </Link>
+          <Link to="/profile" className={`center-nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
+            Profile
+          </Link>
+        </div>
+      )}
 
       <div className="navbar-right">
         <div className="notification-container" ref={dropdownRef}>

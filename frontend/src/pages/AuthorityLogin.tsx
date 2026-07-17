@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Shield, ArrowRight, Home, Eye, EyeOff } from 'lucide-react'
 import { api } from '../services/api'
@@ -7,6 +7,8 @@ import '../pages/Auth.css'
 
 export default function AuthorityLogin() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const authRequired = searchParams.get('authRequired') === '1'
   const [formData, setFormData] = useState({
     email: 'authority@fiducia.bd',
     password: '',
@@ -67,6 +69,17 @@ export default function AuthorityLogin() {
         <div className="demo-creds">
           Demo: <strong>authority@fiducia.bd</strong> / <strong>authority123</strong>
         </div>
+
+        {authRequired && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="error-message"
+            style={{ background: 'rgba(59, 130, 246, 0.12)', borderColor: '#3b82f6', color: '#93c5fd' }}
+          >
+            You need to log in first to access the authority dashboard.
+          </motion.div>
+        )}
 
         {error && (
           <motion.div

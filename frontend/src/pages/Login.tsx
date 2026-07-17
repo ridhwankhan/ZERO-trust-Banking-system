@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Shield, ArrowRight, KeyRound, UserCheck, Home, Eye, EyeOff } from 'lucide-react'
 import { login, verifyTwoFactorLogin, api } from '../services/api'
@@ -8,6 +8,9 @@ import './Auth.css'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const deviceRevoked = searchParams.get('revoked') === '1'
+  const authRequired = searchParams.get('authRequired') === '1'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -52,6 +55,7 @@ export default function Login() {
       localStorage.setItem('access_token', response.access)
       localStorage.setItem('refresh_token', response.refresh)
       localStorage.setItem('user', JSON.stringify(response.user))
+      localStorage.setItem('role', response.user?.role || 'user')
       navigate('/dashboard')
     } catch (err: any) {
       console.error('Passkey login failed:', err)
@@ -101,12 +105,17 @@ export default function Login() {
       localStorage.setItem('access_token', response.tokens.access)
       localStorage.setItem('refresh_token', response.tokens.refresh)
       localStorage.setItem('user', JSON.stringify(response.user))
+      localStorage.setItem('role', response.user?.role || 'user')
       navigate('/dashboard')
     } catch (err: any) {
       let errorMessage = 'Login failed. Please check your credentials.'
       if (!err.response) {
         errorMessage =
           'Unable to reach backend server. Please check your internet connection or the server URL.'
+      } else if (err.response.status === 403 && err.response.data?.code === 'device_revoked') {
+        errorMessage =
+          err.response.data.error ||
+          'This device was removed from your Security Center. Sign in from a trusted device.'
       } else if (err.response.status === 401) {
         errorMessage =
           'User not found or incorrect password. Please check your credentials or register.'
@@ -148,6 +157,7 @@ export default function Login() {
       localStorage.setItem('access_token', response.tokens.access)
       localStorage.setItem('refresh_token', response.tokens.refresh)
       localStorage.setItem('user', JSON.stringify(response.user))
+      localStorage.setItem('role', response.user?.role || 'user')
       navigate('/dashboard')
     } catch (err: any) {
       const errorMessage =
@@ -188,6 +198,28 @@ export default function Login() {
             ? 'Enter your 6-digit authenticator code to continue'
             : 'Sign in to your secure account'}
         </p>
+
+        {authRequired && !deviceRevoked && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="error-message"
+            style={{ background: 'rgba(59, 130, 246, 0.12)', borderColor: '#3b82f6', color: '#93c5fd' }}
+          >
+            You need to log in first to access that page.
+          </motion.div>
+        )}
+
+        {deviceRevoked && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="error-message"
+            style={{ background: 'rgba(245, 158, 11, 0.12)', borderColor: '#f59e0b', color: '#fcd34d' }}
+          >
+            This device was removed from your Security Center. Sign in again only if you trust this browser.
+          </motion.div>
+        )}
 
         {error && (
           <motion.div

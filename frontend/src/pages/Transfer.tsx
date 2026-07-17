@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Send, ArrowRight, CheckCircle, AlertCircle, CreditCard, Lock, Shield, EyeOff } from 'lucide-react'
 import { api } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { emitDataRefresh } from '../utils/refreshBus'
 import './Transfer.css'
 
 export default function Transfer() {
@@ -14,10 +16,6 @@ export default function Transfer() {
   const [userBalance, setUserBalance] = useState('0.00')
   const [transactionDetails, setTransactionDetails] = useState<any>(null)
 
-  useEffect(() => {
-    fetchBalance()
-  }, [])
-
   const fetchBalance = async () => {
     try {
       const response = await api.get('/transactions/balance/')
@@ -26,6 +24,8 @@ export default function Transfer() {
       console.error('Failed to fetch balance:', err)
     }
   }
+
+  useAutoRefresh(fetchBalance, { scope: 'transfer', intervalMs: 5000 })
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,6 +68,7 @@ export default function Transfer() {
       setTransactionDetails(response.data.transaction)
       setUserBalance(response.data.sender_new_balance)
       setSuccess(true)
+      emitDataRefresh('all')
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 'Transfer failed'
       setError(errorMessage)

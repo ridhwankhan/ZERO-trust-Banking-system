@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -11,6 +11,7 @@ import {
   Check
 } from 'lucide-react'
 import { getBalance, getTransactionHistory } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import './Dashboard.css'
 
 interface Transaction {
@@ -30,32 +31,34 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
   const [copied, setCopied] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-  // Fetch on mount and when location changes (returning from deposit)
-  useEffect(() => {
-    fetchDashboardData()
-  }, [filter, location])
-
   const fetchDashboardData = async () => {
-    setLoading(true)
     try {
       const params: any = {}
       if (filter === 'sent') params.as_sender = true
       if (filter === 'received') params.as_receiver = true
-      
+
       const [balanceRes, historyRes] = await Promise.all([
         getBalance(),
-        getTransactionHistory(params)
+        getTransactionHistory(params),
       ])
       setBalance(balanceRes.balance)
       setTransactions(historyRes.results?.transactions || historyRes.transactions || [])
+      setLastUpdated(new Date())
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  useAutoRefresh(fetchDashboardData, {
+    scope: 'dashboard',
+    deps: [filter, location.pathname],
+    intervalMs: 5000,
+  })
 
   const isSent = (tx: Transaction) => tx.sender_email === user.email
 
@@ -150,6 +153,11 @@ export default function Dashboard() {
           <div className="security-widget-head">
             <Wifi size={16} />
             <span>Live Security Status</span>
+            {lastUpdated && (
+              <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.75 }}>
+                Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
           </div>
           <div className="security-widget-line">
             <span className="security-pulse-dot" />

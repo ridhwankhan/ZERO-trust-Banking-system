@@ -213,8 +213,25 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             is_successful=True,
         )
 
-        # Register / update trusted device
+        # Register / update trusted device (never re-trust a revoked device)
         if user_obj and device_fingerprint:
+            revoked = TrustedDevice.objects.filter(
+                user=user_obj,
+                device_fingerprint=device_fingerprint,
+                trust_status=TrustedDevice.STATUS_REMOVED,
+            ).exists()
+            if revoked:
+                return Response(
+                    {
+                        'error': (
+                            'This device was removed from your Security Center. '
+                            'Sign in from a trusted device or re-enroll this device after contacting support.'
+                        ),
+                        'code': 'device_revoked',
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             device, created = TrustedDevice.objects.get_or_create(
                 user=user_obj,
                 device_fingerprint=device_fingerprint,
@@ -224,12 +241,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                     'name': f"{browser} on {os_name}",
                     'has_face_biometric': face_verified,
                     'face_signature_hash': face_hash or None,
+                    'trust_status': TrustedDevice.STATUS_TRUSTED,
                 },
             )
             if not created:
                 device.browser = browser
                 device.os = os_name
-                device.save()
+                device.trust_status = TrustedDevice.STATUS_TRUSTED
+                device.save(update_fields=['browser', 'os', 'trust_status', 'last_used'])
             else:
                 # New device → email notification
                 notify_new_device_login(user_obj, {

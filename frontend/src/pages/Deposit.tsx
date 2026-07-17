@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CreditCard, DollarSign, CheckCircle, AlertCircle } from 'lucide-react'
 import { api } from '../services/api'
+import { emitDataRefresh } from '../utils/refreshBus'
 import './Deposit.css'
 
 export default function Deposit() {
@@ -64,6 +65,7 @@ export default function Deposit() {
       setTransactionId(response.data.transaction.id)
       setSuccess(true)
       setStep(3)
+      emitDataRefresh('all')
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Payment failed'
       setError(errorMessage)

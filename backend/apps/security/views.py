@@ -193,19 +193,47 @@ class UserTrustedDevicesView(generics.ListAPIView):
 
 
 class UserRemoveDeviceView(APIView):
-    """Remove (un-trust) a device."""
+    """Revoke a trusted device — blocks future API access from that fingerprint."""
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, device_id):
+        from .models import SecurityAlert
+
         try:
-            device = TrustedDevice.objects.get(
-                id=device_id, user=request.user,
-            )
-            device.trust_status = TrustedDevice.STATUS_REMOVED
-            device.save()
-            return Response({'message': 'Device removed from trusted list'})
+            device = TrustedDevice.objects.get(id=device_id, user=request.user)
         except TrustedDevice.DoesNotExist:
             return Response({'error': 'Device not found'}, status=404)
+
+        if device.trust_status == TrustedDevice.STATUS_REMOVED:
+            return Response({'message': 'Device already revoked', 'revoked': True})
+
+        device.trust_status = TrustedDevice.STATUS_REMOVED
+        device.has_face_biometric = False
+        device.face_signature_hash = None
+        device.save(update_fields=[
+            'trust_status', 'has_face_biometric', 'face_signature_hash', 'last_used'
+        ])
+
+        SecurityAlert.objects.create(
+            user=request.user,
+            alert_type='device_revoked',
+            severity=SecurityAlert.SEVERITY_MEDIUM,
+            message=(
+                f'Revoked trusted device "{device.name}" ({device.browser} / {device.os}). '
+                f'Active sessions on that device are now blocked.'
+            ),
+        )
+
+        current_fp = request.META.get('HTTP_X_DEVICE_FINGERPRINT', '')
+        revoked_current = current_fp and current_fp == device.device_fingerprint
+
+        return Response({
+            'message': 'Device revoked. Sessions on that device are now blocked.',
+            'revoked': True,
+            'revoked_current_device': revoked_current,
+            'device_id': device.id,
+        })
 
 
 class UserSecurityAlertsView(generics.ListAPIView):

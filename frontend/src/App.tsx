@@ -25,30 +25,57 @@ const isAuthenticated = () => {
   return !!localStorage.getItem('access_token')
 }
 
-// Get user role from localStorage
-const getUserRole = () => {
-  return localStorage.getItem('role')
+// Get user role from localStorage (falls back to the stored user object)
+const getUserRole = (): string => {
+  const explicit = localStorage.getItem('role')
+  if (explicit) return explicit
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    return user?.role || 'user'
+  } catch {
+    return 'user'
+  }
 }
 
-// Protected route wrapper
+// Where a logged-in account belongs, based on its role
+const homeForRole = (role: string) => {
+  if (role === 'admin') return '/admin-dashboard'
+  if (role === 'authority') return '/authority-dashboard'
+  return '/dashboard'
+}
+
+// Protected route for regular banking users ONLY.
+// - Not logged in  -> login page (with "please sign in" notice)
+// - Admin/Authority -> bounced back to their own dashboard (cannot roam the bank app)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login?authRequired=1" replace />
+  }
+  const role = getUserRole()
+  if (role === 'admin' || role === 'authority') {
+    return <Navigate to={homeForRole(role)} replace />
   }
   return <>{children}</>
 }
 
-// Admin/Authority only route wrapper
+// Admin-only route wrapper
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated() || getUserRole() !== 'admin') {
-    return <Navigate to="/login" replace />
+  if (!isAuthenticated()) {
+    return <Navigate to="/admin-login?authRequired=1" replace />
+  }
+  if (getUserRole() !== 'admin') {
+    return <Navigate to={homeForRole(getUserRole())} replace />
   }
   return <>{children}</>
 }
 
+// Authority-only route wrapper
 const AuthorityRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated() || getUserRole() !== 'authority') {
-    return <Navigate to="/login" replace />
+  if (!isAuthenticated()) {
+    return <Navigate to="/authority-login?authRequired=1" replace />
+  }
+  if (getUserRole() !== 'authority') {
+    return <Navigate to={homeForRole(getUserRole())} replace />
   }
   return <>{children}</>
 }

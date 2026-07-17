@@ -44,11 +44,20 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle token expiration
+// Handle token expiration and revoked devices
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isAuthRoute = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register')
+    const isAuthRoute =
+      error.config?.url?.includes('/auth/login') ||
+      error.config?.url?.includes('/auth/register')
+
+    if (error.response?.status === 403 && error.response?.data?.code === 'device_revoked') {
+      localStorage.clear()
+      window.location.href = '/login?revoked=1'
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
@@ -57,6 +66,8 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export { getDeviceFingerprint }
 
 // Types
 export interface User {

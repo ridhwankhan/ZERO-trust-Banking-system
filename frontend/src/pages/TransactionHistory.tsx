@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import jsPDF from 'jspdf'
@@ -16,6 +16,7 @@ import {
   Search
 } from 'lucide-react'
 import { getTransactionHistory, verifyTransaction } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import './TransactionHistory.css'
 
 interface Transaction {
@@ -53,28 +54,27 @@ export default function TransactionHistory() {
   const [verifying, setVerifying] = useState<number | null>(null)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-  useEffect(() => {
-    fetchTransactions()
-  }, [filter, privacyFilter])
-
   const fetchTransactions = async () => {
-    setLoading(true)
     const params: any = {}
     if (filter === 'sent') params.as_sender = true
     if (filter === 'received') params.as_receiver = true
     if (privacyFilter !== 'all') params.privacy_level = privacyFilter
-    
+
     try {
       const response = await getTransactionHistory(params)
       setTransactions(response.results?.transactions || response.transactions || [])
     } catch (error: any) {
       console.error('Failed to fetch transactions:', error)
-      console.log('API Response:', error.response?.data)
-      console.log('Filter params:', params)
     } finally {
       setLoading(false)
     }
   }
+
+  useAutoRefresh(fetchTransactions, {
+    scope: 'history',
+    deps: [filter, privacyFilter],
+    intervalMs: 5000,
+  })
 
   const handleVerify = async (id: number) => {
     setVerifying(id)

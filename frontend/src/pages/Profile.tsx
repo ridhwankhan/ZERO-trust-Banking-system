@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Save, Shield, User, Mail, Phone, KeyRound, QrCode, CheckCircle2, Copy, Check } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { enableTwoFactor, getProfile, setupTwoFactor, updateProfile } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { emitDataRefresh } from '../utils/refreshBus'
 import './Profile.css'
 
 export default function Profile() {
@@ -55,6 +57,21 @@ export default function Profile() {
 
     fetchProfile()
   }, [])
+
+  useAutoRefresh(async () => {
+    if (loading) return
+    try {
+      const profile = await getProfile()
+      setFormData({
+        email: profile.email || '',
+        username: profile.username || '',
+        contact_info: profile.contact_info || '',
+      })
+      setTwoFactorEnabled(Boolean(profile.two_factor_enabled))
+    } catch {
+      // keep existing form values on background refresh errors
+    }
+  }, { scope: 'profile', intervalMs: 8000, enabled: !loading })
 
   const asCiphertext = (value: string) => {
     try {
@@ -108,6 +125,7 @@ export default function Profile() {
       )
 
       setMessage('Profile updated and securely re-encrypted.')
+      emitDataRefresh('all')
     } catch (err: any) {
       const data = err?.response?.data
       let msg = 'Failed to update profile.'

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -16,6 +16,8 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { api } from '../services/api'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { emitDataRefresh } from '../utils/refreshBus'
 import BiometricScannerModal from '../components/BiometricScannerModal'
 import './SecurityCenter.css'
 
@@ -79,13 +81,10 @@ export default function SecurityCenter() {
   const [scannerTitle, setScannerTitle] = useState('Enroll Passkey')
   const [passkeyStatus, setPasskeyStatus] = useState<PasskeyStatus | null>(null)
   const [passkeyMsg, setPasskeyMsg] = useState('')
-
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const [deviceMsg, setDeviceMsg] = useState('')
+  const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null)
 
   const fetchData = async () => {
-    setLoading(true)
     setErrorMsg('')
     try {
       const [loginsRes, devicesRes, alertsRes, statusRes, passkeyRes] = await Promise.all([
@@ -108,6 +107,8 @@ export default function SecurityCenter() {
     }
   }
 
+  useAutoRefresh(fetchData, { scope: 'security', intervalMs: 5000 })
+
   const openEnroll = (overwrite = false) => {
     setScannerMode('enroll')
     setScannerOverwrite(overwrite)
@@ -127,18 +128,45 @@ export default function SecurityCenter() {
     try {
       await api.delete('/security/webauthn/clear/')
       setPasskeyMsg('All passkeys removed. You can enroll a new one.')
+      emitDataRefresh('security')
       fetchData()
     } catch (err: any) {
       setPasskeyMsg(err.response?.data?.error || 'Failed to remove passkeys.')
     }
   }
 
-  const removeDevice = async (deviceId: number) => {
+  const removeDevice = async (deviceId: number, deviceName: string) => {
+    if (
+      !confirm(
+        `Remove "${deviceName}" from trusted devices?\n\nAny active session on that device will be signed out immediately.`
+      )
+    ) {
+      return
+    }
+
+    setRemovingDeviceId(deviceId)
+    setDeviceMsg('')
     try {
-      await api.post(`/security/me/devices/${deviceId}/remove/`)
+      const res = await api.post(`/security/me/devices/${deviceId}/remove/`)
+      setDeviceMsg(res.data.message || 'Device removed successfully.')
+      emitDataRefresh('all')
+
+      if (res.data.revoked_current_device) {
+        localStorage.clear()
+        window.location.href = '/login?revoked=1'
+        return
+      }
+
       setDevices((prev) => prev.filter((d) => d.id !== deviceId))
-    } catch (err) {
-      console.error('Failed to remove device', err)
+      fetchData()
+    } catch (err: any) {
+      setDeviceMsg(
+        err.response?.data?.error ||
+          err.response?.data?.detail ||
+          'Failed to remove device. Please try again.'
+      )
+    } finally {
+      setRemovingDeviceId(null)
     }
   }
 
@@ -157,6 +185,7 @@ export default function SecurityCenter() {
     } else {
       setPasskeyMsg('Passkey enrolled. You can now use Passkey / Face ID on the login page.')
     }
+    emitDataRefresh('security')
     fetchData()
   }
 
@@ -165,6 +194,7 @@ export default function SecurityCenter() {
       const action = transactionFrozen ? 'unfreeze' : 'freeze'
       const res = await api.post('/users/profile/freeze/', { action })
       setTransactionFrozen(res.data.is_frozen)
+      emitDataRefresh('all')
       alert(res.data.message)
     } catch (err) {
       console.error('Failed to toggle freeze:', err)
@@ -346,6 +376,11 @@ export default function SecurityCenter() {
 
             {tab === 'devices' && (
               <div className="sc-list">
+                {deviceMsg && (
+                  <p style={{ margin: '0 0 12px 0', fontSize: 13, color: '#86efac' }}>
+                    {deviceMsg}
+                  </p>
+                )}
                 {devices.length === 0 && <p className="sc-empty">No trusted devices.</p>}
                 {devices.map((device) => (
                   <div key={device.id} className="sc-device-item">
@@ -362,8 +397,12 @@ export default function SecurityCenter() {
                         {device.has_face_biometric && <span className="sc-face-badge">🔐 Face enrolled</span>}
                       </div>
                     </div>
-                    <button className="sc-remove-btn" onClick={() => removeDevice(device.id)}>
-                      <Trash2 size={14} /> Remove
+                    <button
+                      className="sc-remove-btn"
+                      onClick={() => removeDevice(device.id, device.name)}
+                      disabled={removingDeviceId === device.id}
+                    >
+                      <Trash2 size={14} /> {removingDeviceId === device.id ? 'Removing...' : 'Remove'}
                     </button>
                   </div>
                 ))}
