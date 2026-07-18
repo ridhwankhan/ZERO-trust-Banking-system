@@ -1,20 +1,21 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Lock, LogIn, UserPlus, Shield, Database, Fingerprint, Sparkles } from 'lucide-react'
+import { Lock, LogIn, UserPlus, Shield, Database, Fingerprint, Sparkles, GraduationCap } from 'lucide-react'
 import './Home.css'
 
 function Home() {
   const navigate = useNavigate()
-  
+
   useEffect(() => {
-    // If user is already authenticated, redirect to dashboard
     const token = localStorage.getItem('access_token')
-    if (token) {
-      navigate('/dashboard')
-    }
+    if (!token) return
+    const role = localStorage.getItem('role') || JSON.parse(localStorage.getItem('user') || '{}')?.role
+    if (role === 'admin') navigate('/admin-dashboard')
+    else if (role === 'authority') navigate('/authority-dashboard')
+    else navigate('/dashboard')
   }, [navigate])
-  
+
   return (
     <div className="home-container">
       <div className="home-glow home-glow-one" />
@@ -28,9 +29,14 @@ function Home() {
           transition={{ duration: 0.55 }}
           className="hero-section"
         >
-          <div className="hero-pill">
-            <Sparkles size={14} />
-            Zero-Trust Encrypted Banking
+          <div className="hero-pill-row">
+            <div className="hero-pill">
+              <Sparkles size={14} />
+              Fiducia Bank · Zero-Trust Encrypted Banking
+            </div>
+            <div className="hero-pill hero-pill-accent">
+              Showcased at NSU Cybersecurity Inauguration
+            </div>
           </div>
 
           <h1 className="home-title">Banking security engineered like a modern cryptographic cloud startup.</h1>
@@ -78,6 +84,32 @@ function Home() {
             <p>Admin and Authority workspaces support KYC, monitoring, and visibility over security operations.</p>
           </article>
         </motion.div>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+          className="thesis-section"
+          aria-label="Related undergraduate thesis"
+        >
+          <div className="thesis-header">
+            <GraduationCap size={22} />
+            <div>
+              <p className="thesis-kicker">Related undergraduate thesis</p>
+              <h2 className="thesis-title">
+                Multimodal ML for data-driven agricultural land management
+              </h2>
+            </div>
+            <span className="thesis-score">98% defense</span>
+          </div>
+          <p className="thesis-body">
+            Separate from Fiducia Bank, this research fused satellite vegetation indices (NDVI), Sentinel-1 radar
+            backscatter, climate variables, and soil chemistry across seven Bangladeshi districts to predict Aman rice
+            and Wheat yields. Ensemble models (Random Forest, XGBoost) outperformed linear baselines (cross-validated
+            R² above ~0.85), with imputation for missing remote-sensing and soil fields — aiming at climate-adaptive,
+            Agriculture 5.0–style decision support rather than a commercial product.
+          </p>
+        </motion.section>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="home-admin-section">
           <p className="admin-label">Administrative Access</p>

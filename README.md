@@ -16,6 +16,7 @@ A comprehensive, secure banking platform built with zero-trust principles, featu
 
 - [Live Demo](#-live-demo)
 - [Overview](#-overview)
+- [Related Thesis Work](#-related-thesis-work)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Security Features](#-security-features)
@@ -44,6 +45,33 @@ Try the production build here:
 | **Authority** | [/authority-login](https://fiducia-bank.vercel.app/authority-login) | `authority@fiducia.bd` | `authority123` |
 
 > Role guards keep admin/authority sessions off the banking UI, and unauthenticated visits to protected pages redirect to the matching login with a “you need to log in first” notice.
+
+## 🎓 Related Thesis Work
+
+Alongside Fiducia Bank, the team’s undergraduate thesis focused on **data-driven agricultural land management** using a **multimodal machine learning framework**.
+
+| | |
+|---|---|
+| **Topic** | Multimodal ML for sustainable agricultural land management in Bangladesh |
+| **Defense result** | **98%** on thesis defense |
+| **Goal** | Help stakeholders make climate-adaptive land-use decisions with fused multi-source data |
+
+### What we tried to do
+
+Climate volatility and soil degradation make unimodal farming models unreliable: looking at weather alone, or satellite indices alone, misses how soil chemistry, vegetation health, and climate interact. This thesis built an end-to-end research pipeline that:
+
+1. **Fused heterogeneous data** across seven districts (roughly 2018–2025), including:
+   - Satellite vegetation indices (**NDVI**)
+   - Radar backscatter (**Sentinel-1 VV/VH**)
+   - Climate variables (temperature, precipitation, solar radiation)
+   - Soil properties (pH, organic carbon, clay, sand)
+2. **Predicted crop yields** for **Aman rice** (monsoon) and **Wheat** (non-monsoon) with classical and ensemble learners (Linear Regression, Random Forest, **XGBoost**).
+3. **Handled real-world data gaps** — missing remote-sensing and soil values were addressed with iterative imputation instead of dropping districts wholesale.
+4. **Interpreted the models** — feature importance highlighted NDVI as a strong predictor, with radar signatures and soil chemistry contributing complementary signal; analysis also surfaced agronomic patterns such as an inverted-U relationship between monsoon rainfall and Aman yield, plus spatial productivity clusters tied to agro-ecological context.
+
+Cross-validated results reached **R² above ~0.85** with XGBoost, substantially outperforming simple linear baselines. The intent was not a commercial app, but an **interpretable, scalable decision-support style framework** aligned with Agriculture 5.0 — evidence for climate-aware planning and food-security policy in Bangladesh.
+
+> This thesis is separate academic research from Fiducia Bank (CSE447). It is listed here to show the broader applied-ML and systems work behind the team.
 
 ## 🎯 Overview
 
