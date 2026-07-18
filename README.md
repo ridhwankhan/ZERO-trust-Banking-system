@@ -1,51 +1,83 @@
-# 🔐 ZERO Trust Banking System
+# 🏦 Fiducia Bank — Zero-Trust Banking System
 
-A comprehensive, secure banking platform built with zero-trust principles, featuring advanced cryptography, role-based access control, and tamper-proof transaction integrity.
+**Fiducia Bank** is a full-stack zero-trust banking platform built for CSE447 (Cryptography). It was showcased at the **NSU Cybersecurity Inauguration**.
+
+| | |
+|---|---|
+| **Live demo** | [https://fiducia-bank.vercel.app/](https://fiducia-bank.vercel.app/) |
+| **API** | `https://zero-trust-banking-system-h1o4.onrender.com/api` |
+| **Repository** | [ridhwankhan/ZERO-trust-Banking-system](https://github.com/ridhwankhan/ZERO-trust-Banking-system) |
+| **Course** | CSE447 — Cryptography |
+| **Showcase** | NSU Cybersecurity Inauguration |
+
+A comprehensive, secure banking platform built with zero-trust principles, featuring advanced cryptography, role-based access control, WebAuthn/passkeys, device trust, and tamper-proof transaction integrity.
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Security Features](#security-features)
-- [Project Structure](#project-structure)
+- [Live Demo](#-live-demo)
+- [Overview](#-overview)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Security Features](#-security-features)
+- [Project Structure](#-project-structure)
 - [Installation & Setup](#installation--setup)
 - [Usage Guide](#usage-guide)
 - [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
 - [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+- [Deployment](#-deployment)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## 🌐 Live Demo
+
+Try the production build here:
+
+**➡️ [https://fiducia-bank.vercel.app/](https://fiducia-bank.vercel.app/)**
+
+### Demo credentials (for judges & visitors)
+
+| Role | Login page | Email | Password |
+|------|------------|-------|----------|
+| **User** | [/login](https://fiducia-bank.vercel.app/login) | Register a new account | (your password) |
+| **Admin** | [/admin-login](https://fiducia-bank.vercel.app/admin-login) | `admin@fiducia.bd` | `admin123` |
+| **Authority** | [/authority-login](https://fiducia-bank.vercel.app/authority-login) | `authority@fiducia.bd` | `authority123` |
+
+> Role guards keep admin/authority sessions off the banking UI, and unauthenticated visits to protected pages redirect to the matching login with a “you need to log in first” notice.
 
 ## 🎯 Overview
 
-This is a full-stack banking application that implements enterprise-grade security features including:
+**Fiducia Bank** implements enterprise-grade zero-trust security, including:
 
-- **RSA-2048 + ECC Encryption** for all transactions
+- **RSA-2048 + ECC Encryption** for profiles and transactions
 - **HMAC-SHA256** integrity verification
 - **Role-Based Access Control** (User, Admin, Authority)
 - **Tamper-proof transaction chains** with hash linking
-- **JWT-based authentication** with secure token management
-- **Real-time balance updates** with atomic transactions
+- **JWT authentication** with secure token management
+- **WebAuthn / Passkey (Face ID)** enrollment and login
+- **Trusted-device revocation** that blocks API access from removed devices
+- **Live dashboard updates** (balance, history, security alerts, notifications)
 
 ## ✨ Features
 
 ### 🔐 Security & Authentication
 - JWT-based authentication with access/refresh tokens
-- Role-based access control (User, Admin, Authority)
+- Role-based access control (User, Admin, Authority) with route isolation
 - Two-factor authentication (TOTP) setup and login verification
+- WebAuthn / Passkey (Face ID) enrollment, verify, replace, and login
+- Trusted-device registry with real revocation (blocked API + login)
 - Secure password hashing with PBKDF2
-- Session management with automatic logout
+- Session management with automatic logout on device revoke
 - Profile encryption for email, username, and contact info
 
 ### 💰 Banking Features
 - **Deposit System** with fake payment gateway simulation
 - **Money Transfers** between users with privacy levels
 - **Transaction History** with advanced filtering
-- **Real-time Balance Updates**
+- **Live Balance & History Updates** (no manual refresh required)
 - **Admin Dashboard** for user management
 - **Authority Panel** for compliance oversight
+- **Security Center** for devices, passkeys, and alerts
 
 ### 📝 Encrypted Posts Module
 - Create/read/update/delete posts via `/api/posts/`
@@ -479,7 +511,17 @@ npm test
 
 ## 🚀 Deployment
 
-### Production Setup
+### Live production
+
+| Layer | Host | URL |
+|-------|------|-----|
+| **Frontend** | Vercel | [https://fiducia-bank.vercel.app/](https://fiducia-bank.vercel.app/) |
+| **Backend API** | Render | `https://zero-trust-banking-system-h1o4.onrender.com/api` |
+| **Health check** | Render | `GET /api/health/` |
+
+The frontend is configured with `VITE_API_BASE_URL` pointing at the Render API. After backend changes, use **Manual Deploy** on Render if auto-deploy does not pick up the latest commit.
+
+### Production Setup (self-host)
 
 1. **Environment Variables:**
    ```env
@@ -572,6 +614,7 @@ For support and questions:
 - **v1.1.0** - Added advanced privacy levels
 - **v1.2.0** - Enhanced security with ECC encryption
 - **v1.3.0** - Added admin and authority dashboards
+- **v2.0.0** - Rebranded as **Fiducia Bank**; WebAuthn/passkeys, device revocation, live UI updates, role-route guards; live at [fiducia-bank.vercel.app](https://fiducia-bank.vercel.app/); showcased at **NSU Cybersecurity Inauguration**
 
 ---
 
@@ -598,30 +641,35 @@ The system uses a combination of modern cryptographic algorithms to ensure Zero-
 *   **TOTP (Time-Based One-Time Password for 2FA)**
     *   **Where it is:** `backend/crypto/totp.py`
     *   **What it does:** Generates the QR code provisioning URI and validates the 6-digit codes sent from the user's Google/Microsoft Authenticator app during login.
+*   **WebAuthn / Passkeys**
+    *   **Where it is:** `backend/apps/security/webauthn_views.py`
+    *   **What it does:** Passkey enrollment and biometric login (Face ID / platform authenticator) bound to the production RP ID `fiducia-bank.vercel.app`.
 
 ### 2. How to Navigate the Project (Routes & Roles)
 
-The application has three distinct User Roles. Depending on the account you log into, the system navigates you to different Dashboards.
+Use the live site **[https://fiducia-bank.vercel.app/](https://fiducia-bank.vercel.app/)** (or `http://localhost:5173` when developing locally).
 
 *   **Regular User Role**
-    *   **Login URL:** `http://localhost:5174/login`
+    *   **Login URL:** [/login](https://fiducia-bank.vercel.app/login)
     *   **Main Navigation:** Navigates to `/dashboard`.
-    *   **Permissions:** Can deposit funds, send money, view own transaction history, manage profile, and use 2FA.
+    *   **Permissions:** Deposit, transfer, history, profile, Security Center (devices, passkeys, alerts), 2FA.
 *   **Admin Role**
-    *   **Login URL:** `http://localhost:5174/login` (with Admin credentials: `admin@example.com` / `Admin@12345`)
-    *   **Main Navigation:** Automatically redirects to `/admin-dashboard`.
-    *   **Permissions:** Can view all users (encrypted), suspend/activate users, and monitor all transactions across the system without being able to decrypt the private details.
+    *   **Login URL:** [/admin-login](https://fiducia-bank.vercel.app/admin-login)
+    *   **Credentials:** `admin@fiducia.bd` / `admin123`
+    *   **Main Navigation:** `/admin-dashboard` (cannot open banking user pages).
+    *   **Permissions:** User management, security command center, threat review, ledger integrity checks.
 *   **Authority Role**
-    *   **Login URL:** `http://localhost:5174/login` (with Authority credentials: `authority@example.com` / `Authority@12345`)
-    *   **Main Navigation:** Automatically redirects to `/authority-dashboard`.
-    *   **Permissions:** Responsible for verifying KYC (Know Your Customer) requests, approving user accounts, and issuing the cryptographic keys (RSA/ECC) upon approval.
+    *   **Login URL:** [/authority-login](https://fiducia-bank.vercel.app/authority-login)
+    *   **Credentials:** `authority@fiducia.bd` / `authority123`
+    *   **Main Navigation:** `/authority-dashboard` (cannot open banking user pages).
+    *   **Permissions:** KYC verification and compliance oversight.
 
 ### 3. How to Navigate Each Feature (Step-by-Step)
 
 #### Feature 1: Registration & 2FA Setup
-1. Go to `http://localhost:5174/register` to create a new User account.
+1. Go to [https://fiducia-bank.vercel.app/register](https://fiducia-bank.vercel.app/register) to create a new User account.
 2. The system will automatically log you in and take you to the User Dashboard.
-3. To setup 2FA, navigate to your Profile (if implemented) or follow the prompts, scan the QR code with an Authenticator App, and enter the 6-digit code.
+3. To setup 2FA, open **Profile**, scan the QR code with an Authenticator App, and enter the 6-digit code.
 
 #### Feature 2: Deposit Funds (Fake Payment Gateway)
 1. On the Dashboard, click the green **Deposit Funds** button.
@@ -631,41 +679,31 @@ The application has three distinct User Roles. Depending on the account you log 
    * Use **`4111-1111-1111-1111`** for a **Successful** payment.
    * Use **`4444-4444-4444-4444`** to test a **Declined** payment.
 5. Provide any Expiry Date and CVV.
-6. The backend processes this atomically, updates your ledger balance, and redirects you back to the Dashboard with your new balance.
+6. The backend processes this atomically, updates your ledger balance, and the Dashboard refreshes live with your new balance.
 
 #### Feature 3: Send Money (Transfers & Privacy Levels)
 1. On the Dashboard, click the white **Send Money** button.
-2. Select a recipient from the dropdown.
+2. Enter the recipient email or card number.
 3. Enter the amount to send.
 4. **Select a Privacy Level:**
    * **Standard:** Basic transaction metadata.
    * **Private Metadata:** Information is partially encrypted.
    * **High Privacy:** Utilizes ECC to fully encrypt the transaction payload.
-5. Click transfer. The system validates the balance, encrypts the payload, signs it with HMAC, and hashes it before committing.
+5. Click transfer. The system validates the balance, encrypts the payload, signs it with HMAC, and hashes it before committing. Other open panels update without a manual refresh.
 
 #### Feature 4: View Encrypted Transaction History
-1. From the Dashboard, click **History** or the transparent History button.
+1. From the Dashboard, click **History**.
 2. You will see a list of Sent and Received transactions. 
-3. The backend automatically decrypts the RSA/ECC payloads using your stored keys before serving them to your frontend, proving the end-to-end encryption works seamlessly.
+3. The backend decrypts RSA/ECC payloads using your stored keys before serving them to the frontend.
 
-#### Feature 5: Zero-Trust Security Dashboard & WebRTC Biometrics
-1. **Enroll Face Biometrics (User):**
-   * Log in to a regular user account.
-   * Go to the **Security Center** (from the dashboard).
-   * Click the **Devices** tab and click **"Enroll Face on Current Device"**.
-   * Grant camera permissions, position your face in the target frame, and run the biometric scan.
-2. **Face Biometric Login (User):**
-   * Log out, then type your email and password on the login screen.
-   * Click **"Log in with Face Biometric"**. The WebRTC camera will scan your face, calculate your local pixel matrix hash, and bypass OTP verification dynamically by reducing the risk score.
-3. **Audit Alerts (User):**
-   * If you see any suspicious login in your history, click **"Not me"** next to it. It immediately logs a high-severity `SecurityAlert` in the system database.
-4. **Security Command Center (Admin):**
-   * Log into the admin account (`admin@example.com` / `Admin@12345`).
-   * Navigate to `/admin/security-dashboard` or click **"Security Dashboard"**.
-   * Under the **Threats** tab, view active security alerts and resolve them.
-   * Under **Scanner**, run the **OWASP Security Scanner** to test for injection, weak keys, and CSRF configs.
-   * Under **Ledger Integrity**, run the cryptographic checker to scan for database tampering.
+#### Feature 5: Security Center — Devices, Passkeys & Alerts
+1. **Enroll Passkey / Face ID:** Security Center → Enroll Passkey (or Replace / Update).
+2. **Login with Passkey:** On [/login](https://fiducia-bank.vercel.app/login), enter email → **Passkey / Face ID**.
+3. **Remove a device:** Devices tab → Remove. That browser is blocked from the API and signed out; it cannot re-login as a trusted device until re-enrolled through a trusted path.
+4. **Report “Not me”:** On a suspicious login row, submit a report to raise a high-severity security alert.
+5. **Admin Security Dashboard:** Sign in as admin → Security Dashboard for threats, OWASP scanner, and ledger integrity.
 
 ---
 
-**Built with ❤️ for secure, private banking in the digital age**
+**Fiducia Bank** — Zero-Trust Banking · CSE447 · Showcased at **NSU Cybersecurity Inauguration**  
+**Live:** [https://fiducia-bank.vercel.app/](https://fiducia-bank.vercel.app/)
